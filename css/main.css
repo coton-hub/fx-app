@@ -1,0 +1,10 @@
+/* Styles de démarrage */
+body {
+  padding-top: 56px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background-color: #f8f9fa;
+}
+
+main {
+  max-width: 900px;
+}
