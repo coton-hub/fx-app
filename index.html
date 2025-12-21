@@ -3,19 +3,100 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Forex App — Démo</title>
+  <title>Forex</title>
 </head>
-<body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+<body class="bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
-      <a class="navbar-brand" href="#">Forex App</a>
+      <a class="navbar-brand" href="#">Forex</a>
     </div>
   </nav>
 
-  <main class="container py-5">
-    <h1>Bienvenue sur Forex App</h1>
-    <p>Ceci est une structure de départ pour votre application avec TypeScript, Vite, Bootstrap et jQuery.</p>
-    <button id="testBtn" class="btn btn-primary">Tester TypeScript</button>
+  <main class="container py-3" style="max-width: 1600px;">
+    
+    <div style="flex:1;display:flex;flex-flow: column;">
+
+      <div class="bg-dark-light rounded-bottom" style="flex:1;margin:1em;margin-left:0;">
+
+        <ul class="nav nav-tabs">
+          <li class="nav-item">
+            <a class="nav-link active" id="btnGeneral" href="#">General</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="btnBreakdown" href="#">Break down</a>
+          </li>
+        </ul>
+
+        <div class="p-1 py-2 text-white" id="divGeneral">
+          <p>Contenu Général ..</p>
+        </div> 
+
+        <div class="p-1 py-2 text-white d-none" id="divBreakdown">
+          <table class="table table-dark">
+            <thead class="sticky-header">
+              <tr>
+                <th scope="col">Month</th>
+                <th scope="col">Won</th>
+                <th scope="col">Loss</th>
+                <th scope="col">Total Trades</th>
+                <th scope="col">% Won</th>
+                <th scope="col">Total Pips</th>
+                <th scope="col">Profit</th>
+                <th scope="col">% Return</th>
+              </tr>
+            </thead>
+            <tbody id="breakdownTableBody">
+            </tbody>
+          </table>
+        </div> 
+
+      </div>     
+
+    </div>
+
+    <div class="p-1" style="width:20%;margin-top:1em;display:flex;flex-flow:column;">
+
+      <ul class="nav nav-pills">
+        <li class="nav-item">
+          <a class="nav-link active" id="btnTrades" href="#">Trades</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="btnSettings" href="#">Settings</a>
+        </li>
+      </ul>
+
+      <div class="p-1 py-2 text-white" id="divTrades" style="display:flex;flex-flow:column;flex:1;">
+
+        <div style="flex:1 1 auto;overflow-y:auto;height:60vh;">
+          <table class="table table-dark table-hover" style="font-size:small;">
+            <thead class="sticky-header">
+              <tr>
+                <th scope="col">Timestamp</th>
+                <th scope="col">Symbol</th>
+                <th scope="col">Profit</th>
+              </tr>
+            </thead>
+            <tbody id="tradesTableBody">
+            </tbody>
+          </table>
+        </div>
+
+        <div id="DragDiv" class="draggableDiv border border-dotted border-danger" style="display:flex;">
+          <div class="container draggableContainer fs-2 text-danger">
+              <span>Drag</span>
+              <i class="bi bi-upload mx-3"></i>
+              <span>Drop</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="p-1 py-2 text-white d-none" id="divSettings">
+        <p>Contenu des settings ..</p>
+      </div>      
+
+    </div>
+
   </main>
 
   <script type="module" src="src/main.ts"></script>

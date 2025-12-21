@@ -1,0 +1,116 @@
+✅ 1. ROI : utile mais insuffisant
+
+Le ROI (Return on Investment) te donne :
+
+(Profit net / capital initial) × 100
+
+Par exemple :
+Tu commences l’année avec 5 000$ et tu finis avec 7 500$ → ROI = +50%.
+
+➡️ C’est simple, clair, mais ça ne raconte pas l’histoire.
+Le ROI ignore :
+
+la volatilité de ton equity
+
+les drawdowns
+
+la consistance
+
+le risque pris pour obtenir ce rendement
+
+les dépôts/retraits au fil de l’année
+
+le nombre de trades / styles de marché
+
+C’est un bon résumé… mais un mauvais indicateur de qualité.
+
+🔥 2. Les métriques VRAIMENT importantes pour un day trader
+
+Voici ce que les traders sérieux utilisent pour juger leur performance annuelle.
+
+🟥 2.1 Maximum Drawdown (MDD) → super important
+
+Mesure la pire chute de ton compte.
+
+Si tu as +70% de rendement mais −45% de drawdown, ton année n’est PAS bonne.
+
+Les fonds pros refusent un trader si son MDD dépasse 20–25%.
+
+🟦 2.2 Expectancy (espérance par trade) → le plus utile pour la qualité d’une stratégie
+
+Formule :
+
+(expectancy) = (winning_rate × avg_win) − (losing_rate × avg_loss)
+
+
+Exemple :
+
+winrate 40%
+
+avg_win = 30 pips
+
+avg_loss = 15 pips
+
+Expectancy = 0.40×30 − 0.60×15 = +3 pips par trade
+
+➡️ Si ton expectancy est positive, ta stratégie est mathématiquement rentable.
+Même si ton ROI est faible une année donnée.
+
+🟩 2.3 Sharpe Ratio (ou Sortino) → mesure le rendement vs la volatilité
+
+Sharpe te dit si ton profit est « smooth » ou chaotique.
+
+> 1.0 : bon
+
+> 2.0 : excellent
+
+> 3.0 : fonds d’investissement calibre pro
+
+Même un ROI faible avec un Sharpe élevé = trading propre et contrôlé.
+
+🟨 2.4 Gain de capital vs gain de compétence
+
+Sur un an, tu veux savoir :
+
+est-ce que ton drawdown diminue ?
+
+est-ce que ton expectancy augmente ?
+
+est-ce que ton risk par trade devient plus stable ?
+
+est-ce que tu fais moins d’erreurs ?
+
+Souvent l’amélioration qualitative précède l’amélioration financière.
+
+🟪 2.5 Consistency metrics
+
+Très important pour les day traders :
+
+profit factor (au-dessus de 1.3 = respectable)
+
+risk of ruin
+
+streaks (gagnants/perdants)
+
+variance de lot size
+
+courbe d’equity (smooth ou chaotic)
+
+🎯 Le meilleur résumé pour ton année
+
+Après un an, les indicateurs les plus utiles sont :
+
+Total ROI (OK pour une vue d’ensemble)
+
+Max Drawdown
+
+Expectancy par trade
+
+Profit Factor
+
+Sharpe Ratio ou Sortino
+
+Évolution de ta discipline et constance
+
+➡️ ROI seul ne te dit pas si tu es un bon trader.
+➡️ Expectancy + Drawdown te disent si tu vas survivre.
