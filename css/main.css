@@ -63,3 +63,16 @@ main {
 .nav-tabs {
   border-color: #4d5154;
 }
+
+#breakdownTable tr th {
+  text-align: right;
+}
+#breakdownTableBody tr td {
+  text-align: right;
+}
+
+.input-group-text{
+  color:white;
+  font-weight:lighter;
+  border-color: #4d5154;
+}

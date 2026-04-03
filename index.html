@@ -7,13 +7,14 @@
 </head>
 <body class="bg-dark">
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
+    <div class="container" style="max-width:1600px;">
       <a class="navbar-brand" href="#">Forex</a>
     </div>
   </nav>
 
   <main class="container py-3" style="max-width: 1600px;">
     
+    <!--Main Container-->
     <div style="flex:1;display:flex;flex-flow: column;">
 
       <div class="bg-dark-light rounded-bottom" style="flex:1;margin:1em;margin-left:0;">
@@ -32,16 +33,18 @@
         </div> 
 
         <div class="p-1 py-2 text-white d-none" id="divBreakdown">
-          <table class="table table-dark">
+          <table class="table table-dark" id="breakdownTable">
             <thead class="sticky-header">
               <tr>
-                <th scope="col">Month</th>
+                <th scope="col" style="text-align:left !important;">Year</th>
+                <th scope="col" style="text-align:left !important;">Month</th>
                 <th scope="col">Won</th>
                 <th scope="col">Loss</th>
                 <th scope="col">Total Trades</th>
                 <th scope="col">% Won</th>
                 <th scope="col">Total Pips</th>
                 <th scope="col">Profit</th>
+                <th scope="col">Pips based on profit</th>
                 <th scope="col">% Return</th>
               </tr>
             </thead>
@@ -54,8 +57,10 @@
 
     </div>
 
+    <!--Right Pane-->
     <div class="p-1" style="width:20%;margin-top:1em;display:flex;flex-flow:column;">
 
+      <!--Menu Onglet-->
       <ul class="nav nav-pills">
         <li class="nav-item">
           <a class="nav-link active" id="btnTrades" href="#">Trades</a>
@@ -65,6 +70,7 @@
         </li>
       </ul>
 
+      <!--Trade Container-->
       <div class="p-1 py-2 text-white" id="divTrades" style="display:flex;flex-flow:column;flex:1;">
 
         <div style="flex:1 1 auto;overflow-y:auto;height:60vh;">
@@ -81,7 +87,7 @@
           </table>
         </div>
 
-        <div id="DragDiv" class="draggableDiv border border-dotted border-danger" style="display:flex;">
+        <div id="DragDiv" class="draggableDiv border border-dotted border-danger" style="display:flex;margin-top:5px;">
           <div class="container draggableContainer fs-2 text-danger">
               <span>Drag</span>
               <i class="bi bi-upload mx-3"></i>
@@ -91,10 +97,35 @@
 
       </div>
 
+      <!--Setting Container-->
       <div class="p-1 py-2 text-white d-none" id="divSettings">
-        <p>Contenu des settings ..</p>
+        
+        <div class="input-group mt-3">
+          <span class="input-group-text bg-dark">Capital de trading</span>
+          <input type="number" class="form-control" id="iCapital" style="text-align:right;" >
+          <span class="input-group-text bg-dark">$</span>
+        </div>
+        <div class="mt-3">
+          <button id="btnSaveSettings" type="button" class="btn btn-danger">Save</button>
+        </div>
+
       </div>      
 
+    </div>
+
+    <!--Toast-->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div id="settingSavedToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+          <img src="..." class="rounded me-2" alt="...">
+          <strong class="me-auto">Bootstrap</strong>
+          <small>Just now ..</small>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+          Settings Saved
+        </div>
+      </div>
     </div>
 
   </main>

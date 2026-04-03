@@ -1,7 +1,8 @@
 
 export class Trade {
     //Attributs
-    Id:number;
+    Id:number
+    Ticket:number;
     OpenTime:Date;
     OrderType:OrderType;
     Lots:number;
@@ -14,10 +15,12 @@ export class Trade {
     Profit:number;
     Commission:number;
     Swap:number;
+    Devise:string;
 
     //Constructeur
-    constructor(id:number) {
+    constructor(id:number, ticket:number) {
         this.Id = id;
+        this.Ticket = ticket;
         this.OpenTime = new Date();
         this.OrderType = OrderType.buy;
         this.Lots = 0;
@@ -30,6 +33,7 @@ export class Trade {
         this.Profit = 0;
         this.Commission = 0;
         this.Swap = 0;
+        this.Devise = "";
     }    
 }
 
