@@ -81,6 +81,8 @@ $(function() {
   $("#DragDiv").on("dragleave drop", function(e){ e.preventDefault(); e.stopPropagation(); $(this).removeClass("active"); });
   $("#DragDiv").on("drop", function(e)  
   {
+    $('#menuTabBreakdown').html('');
+
       const trades: Trade[] = [];
       const promises: Promise<Trade[]>[] = [];
 
@@ -125,22 +127,92 @@ $(function() {
           results.forEach(tradeArray => {
               trades.push(...tradeArray);
           });
-          
-          trades.sort((a,b) => {
-            const nameA = a.OpenTime.toISOString().toUpperCase(); // ignore upper and lowercase
-            const nameB = b.OpenTime.toISOString().toUpperCase(); // ignore upper and lowercase
 
-            if (nameA < nameB) {
-              return 1;
-            }
-            if (nameA > nameB) {
-              return -1;
-            }
-            // names must be equal
-            return 0;
+          const groupedBy = new Map<number, Trade[]>();
+          trades.forEach(trade => {
+
+              if (!groupedBy.has(trade.Id)) groupedBy.set(trade.Id, []);
+              groupedBy.get(trade.Id)?.push(trade);
           });
 
-          RemplirTblTrade(trades);
+          trades.sort((a,b) => {
+              const nameA = a.OpenTime.toISOString().toUpperCase(); // ignore upper and lowercase
+              const nameB = b.OpenTime.toISOString().toUpperCase(); // ignore upper and lowercase
+
+              if (nameA < nameB) {
+                return 1;
+              }
+              if (nameA > nameB) {
+                return -1;
+              }
+              // names must be equal
+              return 0;
+            });
+
+          var content = '<ul style="border:none; !important" class="nav nav-tabs" id="dynamicAccounts" role="tablist">';
+
+          var compteur = 0; var firstAccount = 0;
+          groupedBy.forEach((pair, key) => {
+
+            content += '<li class="nav-item">';
+            if (compteur === 0) {
+              content += `<a class='nav-link active nav-link-custom' href='#' data-active data-key='${key}' data-row='${JSON.stringify(pair)}'>${pair[0].Devise} ${key}</a></li>`;
+              firstAccount = key;
+              RemplirSidePanel(pair);
+            }
+            else content += `<a class='nav-link nav-link-custom' href='#' data-key='${key}' data-row='${JSON.stringify(pair)}'>${pair[0].Devise} ${key}</a></li>`;
+            
+            compteur++;
+          }); 
+
+          content += `<li class='nav-item'><a class='nav-link nav-link-custom' href='#' data-key='tous' data-row='${JSON.stringify(trades)}'>TOUS</a></li><li class='nav-item ms-auto'><a class='nav-link nav-link-custom-secondary' href='#' data-key='weekly' data-row='${JSON.stringify(groupedBy.get(firstAccount)) }'>Weekly</a></li></ul>`;
+                    
+          $('#menuTabBreakdown').html(content);
+
+          const weekly_label = $('#dynamicAccounts .nav-link-custom-secondary');
+          const weekly = weekly_label.data('active');
+
+          RemplirTblBreakdown(groupedBy.get(firstAccount) || [], weekly !== undefined);
+
+          //On délègue l'écouteur sur le parent (qui est maintenant dans le DOM)
+          $('#dynamicAccounts').on('click', '.nav-link', function(this: HTMLElement, event) {
+              event.preventDefault();
+             
+              // On récupère les trades stockée dans l'attribut data
+              const key = $(this).data('key') as string;
+              const trades = $(this).data('row') as Trade[];
+
+              const weekly_label = $('#dynamicAccounts .nav-link-custom-secondary');
+              const weekly = weekly_label.data('active');
+              
+              if (key === 'weekly') 
+              {
+                if (weekly) 
+                {
+                  weekly_label.removeClass('active');
+                  weekly_label.removeData('active');
+                }
+                else 
+                  {
+                  weekly_label.addClass('active');
+                  weekly_label.data('active', true);
+                }
+
+                RemplirTblBreakdown(trades, !weekly);
+              }
+              else 
+              {
+                $('#dynamicAccounts .nav-link-custom').removeClass('active');
+                $('#dynamicAccounts .nav-link-custom-secondary').data('row', trades);
+
+                $(this).addClass('active');
+
+                RemplirSidePanel(trades);
+                RemplirTblBreakdown(trades, weekly);
+              }      
+              
+          });
+          
         });
   });
 
@@ -183,9 +255,29 @@ function LireRapport(report:string)
 
     return trades;
 }
-async function RemplirTblTrade(trades:Trade[])
+async function RemplirSidePanel(trades:Trade[]) 
 {
   $('#tradesTableBody').html('');
+
+  //Tableau des trades en ordre de date desc
+  var rows_trades = '';
+  trades.forEach(trade => 
+  {
+    const openTimeDate = typeof trade.OpenTime === 'string' 
+          ? new Date(trade.OpenTime) 
+          : trade.OpenTime;
+
+      rows_trades += '<tr>';
+      rows_trades += '<td>' + openTimeDate.toISOString() + '</td>';
+      rows_trades += '<td>' + trade.Symbol + '</td>';
+      rows_trades += '<td style="text-align:right;">' + trade.Profit + '</td>';
+      rows_trades += '</tr>';
+  });
+
+  $('#tradesTableBody').html(rows_trades);
+}
+async function RemplirTblBreakdown(trades:Trade[], weekly:boolean)
+{
   $('#breakdownTableBody').html('');
 
   const db = await OpenDB();
@@ -198,23 +290,20 @@ async function RemplirTblTrade(trades:Trade[])
     req_setting.onerror = () => { reject(0) }
   })
 
-  var groupedBy = new Map<string, Trade[]>();
-
-  //Tableau des trades en ordre de date desc
-  var rows_trades = '';
+  //Group par mois
+  var groupedBy_month = new Map<string, Trade[]>();
   trades.forEach(trade => 
   {
-      var key = trade.OpenTime.getFullYear().toString() + trade.OpenTime.getMonth().toString();
-      if (!groupedBy.has(key)) groupedBy.set(key, []);
+    const openTimeDate = typeof trade.OpenTime === 'string' 
+          ? new Date(trade.OpenTime) 
+          : trade.OpenTime;
 
-      groupedBy.get(key)?.push(trade);
+      var key = openTimeDate.getFullYear().toString() + openTimeDate.getMonth().toString();
+      if (!groupedBy_month.has(key)) groupedBy_month.set(key, []);
 
-      rows_trades += '<tr>';
-      rows_trades += '<td>' + trade.OpenTime.toISOString() + '</td>';
-      rows_trades += '<td>' + trade.Symbol + '</td>';
-      rows_trades += '<td style="text-align:right;">' + trade.Profit + '</td>';
-      rows_trades += '</tr>';
+      groupedBy_month.get(key)?.push(trade);
   });
+
 
   //Breakdown par mois
   var total_win = 0;
@@ -224,49 +313,97 @@ async function RemplirTblTrade(trades:Trade[])
   var total_pips_profit = 0;
 
   var rows_breakdown = '';
-  groupedBy.forEach(pair => 
+  groupedBy_month.forEach((trades) => 
     {
       var win = 0;
       var loss = 0;
       var profit = 0;
       var pips = 0;
-      var pips_month = 0;
+      var pips_grouped = 0;
 
-      pair.forEach(trade => 
+      const openTimeDate = typeof trades[0].OpenTime === 'string' 
+          ? new Date(trades[0].OpenTime) 
+          : trades[0].OpenTime;
+
+      if (weekly) 
       {
-          if (trade.Profit > 0) win++;
-          else loss++;
+        rows_breakdown += '<tr>';
+        rows_breakdown += '<td style="text-align:left !important;">' + openTimeDate.getFullYear() + '</td>';
+        rows_breakdown += '<td style="text-align:left !important;" colspan="9">' + openTimeDate.toLocaleDateString("en-CA", {month: 'long'}); + '</td>';
+        rows_breakdown += '</tr>';
+      }
 
-          profit += trade.Profit;
-          pips += CalculatePips(trade.OpenPrice, trade.ClosePrice, trade.Symbol, trade.OrderType);
+      if (!weekly) 
+      {
+        trades.forEach(trade => 
+        {
+            if (trade.Profit > 0) win++;
+            else loss++;
 
-          const pip_per_price = trade.Lots * 10;
-          var pips_profit = trade.Profit / pip_per_price;
+            profit += trade.Profit;
+            pips += CalculatePips(trade.OpenPrice, trade.ClosePrice, trade.Symbol, trade.OrderType);
 
-          if (trade.Id === COMPTE_SELECT) pips_profit *= 0.1;
-          
-          pips_month += pips_profit;
-          total_pips_profit += pips_profit;
-      });
+            const pip_per_price = trade.Lots * 10;
+            var pips_profit = trade.Profit / pip_per_price;
 
-      total_win += win;
-      total_loss += loss;
-      total_profit += profit;
-      total_pips += pips;
-      //total_pips_profit += pips_profit;
+            if (trade.Id === COMPTE_SELECT) pips_profit *= 0.1;
+            
+            pips_grouped += pips_profit;
+            total_pips_profit += pips_profit;
+        });
 
-      rows_breakdown += '<tr>';
-      rows_breakdown += '<td style="text-align:left !important;">' + pair[0].OpenTime.getFullYear() + '</td>';
-      rows_breakdown += '<td style="text-align:left !important;">' + pair[0].OpenTime.toLocaleDateString("en-CA", {month: 'long'}); + '</td>';
-      rows_breakdown += '<td>' + win + '</td>';
-      rows_breakdown += '<td>' + loss + '</td>';
-      rows_breakdown += '<td>' + (win + loss) + '</td>';
-      rows_breakdown += '<td>' + (win / (win+loss)).toLocaleString(undefined, {style:'percent'}) + '</td>';
-      rows_breakdown += '<td>' + pips.toLocaleString(undefined, {style:'decimal'}) + '</td>';
-      rows_breakdown += '<td>' + profit.toLocaleString(undefined, {style:'currency',currency:'CAD'}) + '</td>';
-      rows_breakdown += '<td>' + pips_month.toLocaleString(undefined, {style:'decimal'}) + '</td>';
-      rows_breakdown += '<td>' + (profit / capital).toLocaleString(undefined, {style:'percent',minimumFractionDigits:2}) + '</td>';
-      rows_breakdown += '</tr>';
+        total_win += win;
+        total_loss += loss;
+        total_profit += profit;
+        total_pips += pips;
+        //total_pips_profit += pips_profit;  
+
+        rows_breakdown = PrintRowBreakdown(rows_breakdown, openTimeDate, win, loss, pips, profit, pips_grouped, capital, 0, weekly);
+      }
+      else 
+      {
+        var groupedBy_semaine = new Map<number, Trade[]>();
+        trades.forEach(trade => {
+            const semaine = ObtenirSemaineDuMois(trade.OpenTime);
+
+            if (!groupedBy_semaine.has(semaine)) groupedBy_semaine.set(semaine, []);
+            groupedBy_semaine.get(semaine)?.push(trade);
+        });
+
+        groupedBy_semaine.forEach((trades_semaine, key_semaine) => 
+        {
+            win = 0;
+            loss = 0;
+            profit = 0;
+            pips = 0;
+            pips_grouped = 0;
+
+            trades_semaine.forEach(trade => 
+            {
+                if (trade.Profit > 0) win++;
+                else loss++;
+
+                profit += trade.Profit;
+                pips += CalculatePips(trade.OpenPrice, trade.ClosePrice, trade.Symbol, trade.OrderType);
+
+                const pip_per_price = trade.Lots * 10;
+                var pips_profit = trade.Profit / pip_per_price;
+
+                if (trade.Id === COMPTE_SELECT) pips_profit *= 0.1;
+                
+                pips_grouped += pips_profit;
+                total_pips_profit += pips_profit;                 
+            });  
+
+            total_win += win;
+            total_loss += loss;
+            total_profit += profit;
+            total_pips += pips;
+            //total_pips_profit += pips_profit; 
+
+            rows_breakdown = PrintRowBreakdown(rows_breakdown, openTimeDate, win, loss, pips, profit, pips_grouped, capital, key_semaine, weekly);
+        });
+      }          
   });
 
   //TOTAL
@@ -283,7 +420,6 @@ async function RemplirTblTrade(trades:Trade[])
   rows_breakdown += '<td><b>' + (total_profit / capital).toLocaleString(undefined, {style:'percent',minimumFractionDigits:2}) + '</b></td>';
   rows_breakdown += '</tr>';
   
-  $('#tradesTableBody').html(rows_trades);
   $('#breakdownTableBody').html(rows_breakdown);
 }
 
@@ -299,6 +435,36 @@ function CalculatePips(openPrice: number,closePrice: number,symbol: string,order
   const pips = diff / pipSize;
 
   return (orderType === OrderType.buy || orderType === OrderType.buylimit || orderType === OrderType.buystop) ? pips : -pips;
+}
+function PrintRowBreakdown(rows_breakdown:string, openTimeDate:Date, win:number, loss:number, pips:number, profit:number, pips_month:number, capital:number, semaine:number, weekly:boolean):string 
+{
+      rows_breakdown += '<tr>';
+
+      if (!weekly ) {
+      rows_breakdown += '<td style="text-align:left !important;">' + openTimeDate.getFullYear() + '</td>';
+      rows_breakdown += '<td style="text-align:left !important;">' + openTimeDate.toLocaleDateString("en-CA", {month: 'long'}); + '</td>';
+      }
+      else {
+        rows_breakdown += '<td colspan="2" style="text-align:left !important;padding-left:15px;">Semaine ' + semaine.toString().padStart(2, '0') + '</td>';
+      }
+      rows_breakdown += '<td>' + win + '</td>';
+      rows_breakdown += '<td>' + loss + '</td>';
+      rows_breakdown += '<td>' + (win + loss) + '</td>';
+      rows_breakdown += '<td>' + (win / (win+loss)).toLocaleString(undefined, {style:'percent'}) + '</td>';
+      rows_breakdown += '<td>' + pips.toLocaleString(undefined, {style:'decimal'}) + '</td>';
+      rows_breakdown += '<td>' + profit.toLocaleString(undefined, {style:'currency',currency:'CAD'}) + '</td>';
+      rows_breakdown += '<td>' + pips_month.toLocaleString(undefined, {style:'decimal'}) + '</td>';
+      rows_breakdown += '<td>' + (profit / capital).toLocaleString(undefined, {style:'percent',minimumFractionDigits:2}) + '</td>';
+      rows_breakdown += '</tr>';
+
+      return rows_breakdown;
+}
+function ObtenirSemaineDuMois(date: Date): number {
+    const jour = (typeof date === 'string' 
+          ? new Date(date) 
+          : date).getDate();
+    const numeroSemaine = Math.ceil(jour / 7);
+    return numeroSemaine;
 }
 
 //DB Functions

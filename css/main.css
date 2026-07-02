@@ -63,6 +63,34 @@ main {
 .nav-tabs {
   border-color: #4d5154;
 }
+.nav-link-custom {
+  color: white;
+  border: none !important;
+}
+.nav-link-custom.active {
+  color: #dc3545 !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+.nav-link-custom:hover {
+  color: #dc3545 !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+.nav-link-custom-secondary {
+  color: blue;
+  border: none !important;
+}
+.nav-link-custom-secondary.active {
+  color: #dc3545 !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+.nav-link-custom-secondary:hover {
+  color: #dc3545 !important;
+  background-color: transparent !important;
+  border: none !important;
+}
 
 #breakdownTable tr th {
   text-align: right;
