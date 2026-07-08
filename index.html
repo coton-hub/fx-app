@@ -6,18 +6,13 @@
   <title>Forex</title>
 </head>
 <body class="bg-dark">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container" style="max-width:1600px;">
-      <a class="navbar-brand" href="#">Forex</a>
-    </div>
-  </nav>
 
-  <main class="container py-3" style="max-width: 1600px;">
+  <main class="container py-3" style="max-width:100%;">
     
     <!--Main Container-->
     <div style="flex:1;display:flex;flex-flow: column; min-height:0;">
 
-      <div class="bg-dark-light rounded-bottom d-flex flex-column" style="flex:1;min-height:0;margin:1em;margin-left:0;">
+      <div class="bg-dark-light rounded-bottom d-flex flex-column" style="flex:1;min-height:0;margin:1em;margin-left:0;margin-bottom:0;">
 
         <ul class="nav nav-tabs">
           <li class="nav-item">
@@ -58,11 +53,11 @@
                 </div>
               </div>
 
-              <div id="chatMessages" class="chat-messages overflow-auto mb-3 border border-secondary rounded" style="flex:1 1 auto; min-height:0; background:#111; padding:1rem;">
-                <div class="text-muted small">Démarrez la conversation en écrivant votre message ci-dessous.</div>
+              <div id="chatMessages" class="chat-messages overflow-auto mb-3 bg-dark border-0 rounded" style="flex:1 1 auto; min-height:0;padding:1rem;">
+                <div class="text-white small">Démarrez la conversation en écrivant votre message ci-dessous.</div>
               </div>
               <div class="chat-input-wrapper mt-2">
-                <textarea id="chatInput" rows="1" class="flex-grow-1 text-white border border-secondary rounded p-3" style="background:#111; resize:none; overflow:hidden;" placeholder="Écrire un message..." aria-label="Chat message"></textarea>
+                <textarea id="chatInput" rows="1" class="flex-grow-1 text-white border-0 rounded p-3" style="background:#555; resize:none; overflow:hidden;" placeholder="Écrire un message ..." aria-label="Chat message"></textarea>
                 <button id="sendChatBtn" class="chat-send-button btn btn-danger" type="button" aria-label="Envoyer">
                   <i class="bi bi-arrow-up"></i>
                 </button>
@@ -71,11 +66,10 @@
               </div>
 
             <div class="d-flex flex-column rounded p-2" style="flex:1; min-width:280px; max-width:360px; min-height:0;">
-              <div class="mb-3">
+              <div class="mb-4">
                 <h5 class="mb-1">Instructions</h5>
               </div>
-              <textarea id="chatInstructions" class="form-control text-white border border-secondary mb-3 flex-fill" style="flex:1; min-height:0;background:#111;" placeholder="Exemple : répondre en français, privilégier les analyses de trading, détailler les risques, etc."></textarea>
-              <button id="applyInstructionsBtn" type="button" class="btn btn-outline-danger w-100">Appliquer</button>
+              <textarea id="chatInstructions" class="form-control bg-dark border border-black text-white flex-fill" style="flex:1; min-height:0;" placeholder="Veuillez saisir vos instructions ici ..."></textarea>
             </div>
 
           </div>
