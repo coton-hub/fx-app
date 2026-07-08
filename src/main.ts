@@ -2,14 +2,13 @@ import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap/dist/js/bootstrap.bundle.js';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../css/main.css';
-import {Toast} from 'bootstrap';
+import {Toast, Modal} from 'bootstrap';
 import $ from "jquery";
 import { Trade, OrderType } from './trade.ts';
+import { Database } from './database.ts';
+import { KB } from './kb.ts';
 
 const COMPTE_SELECT = 4735924;
-const DB_NAME = "Mac-Fx";
-const DB_VERSION = 2;
-const DB_STORE_NAME_SETTING = 'setting'
 
 function RemoveClass(elements: HTMLElement[], className: string): void {
   elements.forEach((element) => {
@@ -31,11 +30,11 @@ $(function() {
   }
 
   //Load
-  const req_db = OpenDB();
+  const req_db = Database.OpenDB();
   req_db.then((db) => {
     
-    const tx = db.transaction(DB_STORE_NAME_SETTING, 'readonly');
-    var req_capital = tx.objectStore(DB_STORE_NAME_SETTING).get(1);
+    const tx = db.transaction(Database.DB_STORE_NAME_SETTING, 'readonly');
+    var req_capital = tx.objectStore(Database.DB_STORE_NAME_SETTING).get(1);
     req_capital.onsuccess = () => {
       $('#iCapital').val(req_capital.result.capital);
     }
@@ -79,12 +78,12 @@ $(function() {
     var capital = 0;
     if (icapital) capital = parseFloat(icapital);
     
-    const req_db = OpenDB();
+    const req_db = Database.OpenDB();
 
     req_db.then((db) => 
     {
-      const tx = db.transaction(DB_STORE_NAME_SETTING, 'readwrite');
-      tx.objectStore(DB_STORE_NAME_SETTING).put({id:1, capital:capital});
+      const tx = db.transaction(Database.DB_STORE_NAME_SETTING, 'readwrite');
+      tx.objectStore(Database.DB_STORE_NAME_SETTING).put({id:1, capital:capital});
 
       $('#btnTrades').trigger('click');
 
@@ -118,7 +117,56 @@ $(function() {
   }
 
   $('#btnInsertKb').on('click', function() {
-    alert('Action front-end : Insérer dans la KB');
+    // Initialiser la date du jour
+    const today = new Date().toISOString().split('T')[0];
+    $('#kbDate').val(today);
+    
+    // Réinitialiser les autres champs
+    $('#kbEntry').val('');
+    $('#kbCommentaire').val('');
+    $('#kbAnalyste').val('');
+    $('#kbWebSiteUrl').val('');
+    
+    // Afficher le modal
+    const modalElement = document.getElementById('modalInsertKb');
+    if (modalElement) {
+      const modal = new Modal(modalElement);
+      modal.show();
+    }
+  });  
+  $('#btnSaveKbEntry').on('click', function() {
+    // Valider que les champs obligatoires sont remplis
+    const date = $('#kbDate').val()?.toString();
+    const entry = $('#kbEntry').val()?.toString();
+    
+    if (!date || !entry) {
+      alert('Les champs Date et Entry sont obligatoires');
+      return;
+    }
+    
+    // Créer une nouvelle instance KB
+    const kb = new KB(0);
+    kb.Date = new Date(date);
+    kb.Entry = entry;
+    kb.Commentaire = $('#kbCommentaire').val()?.toString() || '';
+    kb.Analyste = $('#kbAnalyste').val()?.toString() || '';
+    kb.WebSiteUrl = $('#kbWebSiteUrl').val()?.toString() || '';
+    
+    // Insérer dans la base de données
+    kb.Insert();
+    
+    // Fermer le modal
+    const modalElement = document.getElementById('modalInsertKb');
+    if (modalElement) {
+      const modal = Modal.getInstance(modalElement);
+      if (modal) {
+        modal.hide();
+      }
+    }
+    
+    // Afficher un message de confirmation
+    const toast = new Toast($('#settingSavedToast'));
+    toast.show();
   });
   $('#btnManageKb').on('click', function() {
     alert('Action front-end : Gérer la KB');
@@ -341,10 +389,10 @@ async function RemplirTblBreakdown(trades:Trade[], weekly:boolean)
 {
   $('#breakdownTableBody').html('');
 
-  const db = await OpenDB();
+  const db = await Database.OpenDB();
 
-  const tx = db.transaction(DB_STORE_NAME_SETTING, 'readonly');
-  const req_setting = await tx.objectStore(DB_STORE_NAME_SETTING).get(1);
+  const tx = db.transaction(Database.DB_STORE_NAME_SETTING, 'readonly');
+  const req_setting = await tx.objectStore(Database.DB_STORE_NAME_SETTING).get(1);
 
   var capital = await new Promise<number>((resolve,reject) => {
     req_setting.onsuccess = () => { resolve(req_setting.result.capital); }
@@ -528,43 +576,4 @@ function ObtenirSemaineDuMois(date: Date): number {
     return numeroSemaine;
 }
 
-//DB Functions
-function OpenDB(): Promise<IDBDatabase> 
-{
-  return new Promise((resolve, reject) => {
 
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
-
-      req.onupgradeneeded = (event) => {
-        const db = req.result;
-        const old_version = event.oldVersion;
-
-        const migrations = [
-          () => MigrateV1(db),
-          () => MigrateV2(req)
-        ]
-
-        for (let i = old_version;i<migrations.length;i++){
-          migrations[i]();
-        }
-      }
-
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-  });
-}
-
-//DB Scripts
-function MigrateV1(db:IDBDatabase):void {
-  const table_setting = db.createObjectStore(DB_STORE_NAME_SETTING, {
-              keyPath:"id",
-              autoIncrement:true
-            });
-
-  table_setting.createIndex("capital", "capital");
-  console.log('Migrated V1');
-}
-function MigrateV2(request:IDBOpenDBRequest):void {
-  request.transaction!.objectStore(DB_STORE_NAME_SETTING).add({capital:0});
-  console.log('Migrated V2');
-}
