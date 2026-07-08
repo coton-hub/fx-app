@@ -1,8 +1,8 @@
-import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap/dist/js/bootstrap.bundle.js'
-import 'bootstrap-icons/font/bootstrap-icons.css'
+import 'bootstrap/dist/css/bootstrap.css';
+import 'bootstrap/dist/js/bootstrap.bundle.js';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import '../css/main.css';
 import {Toast} from 'bootstrap';
-import '../css/main.css'
 import $ from "jquery";
 import { Trade, OrderType } from './trade.ts';
 
@@ -11,6 +11,16 @@ const DB_NAME = "Mac-Fx";
 const DB_VERSION = 2;
 const DB_STORE_NAME_SETTING = 'setting'
 
+function RemoveClass(elements: HTMLElement[], className: string): void {
+  elements.forEach((element) => {
+    $(element).removeClass(className);
+  });
+}
+function AddClass(elements: HTMLElement[], className: string): void {
+  elements.forEach((element) => {
+    $(element).addClass(className);
+  });
+}
 // TypeScript entry point for Forex App
 $(function() {
 
@@ -44,17 +54,23 @@ $(function() {
     $("#btnTrades").removeClass('active');
     $("#btnSettings").addClass('active');
   });
+  $('#btnAI').on('click', function() {
+    AddClass(new Array(...$('#divGeneral'), ...$('#divBreakdown')), 'd-none');
+    RemoveClass(new Array(...$("#btnGeneral"), ...$("#btnBreakdown")), 'active');
+    $("#divAI").removeClass('d-none');
+    $("#btnAI").addClass('active');
+  });
   $('#btnGeneral').on('click', function() {
+    AddClass(new Array(...$('#divAI'), ...$('#divBreakdown')), 'd-none');
+    RemoveClass(new Array(...$("#btnAI"), ...$("#btnBreakdown")), 'active');
     $("#divGeneral").removeClass('d-none');
-    $("#divBreakdown").addClass('d-none');
     $("#btnGeneral").addClass('active');
-    $("#btnBreakdown").removeClass('active');
   });
   $('#btnBreakdown').on('click', function() {
+    AddClass(new Array(...$('#divAI'), ...$('#divGeneral')), 'd-none');
+    RemoveClass(new Array(...$("#btnAI"), ...$("#btnGeneral")), 'active');
     $("#divBreakdown").removeClass('d-none');
-    $("#divGeneral").addClass('d-none');
     $("#btnBreakdown").addClass('active');
-    $("#btnGeneral").removeClass('active');
   });
   $('#btnSaveSettings').on('click', function() {
 
@@ -76,6 +92,51 @@ $(function() {
       toast.show();
     });
   });
+
+  const aiDropdownToggle = document.getElementById('aiActionsDropdown');
+  const aiActionsMenu = document.getElementById('aiActionsMenu');
+
+  if (aiDropdownToggle && aiActionsMenu) {
+
+    aiDropdownToggle.addEventListener('click', function(event) {
+      event.stopPropagation();
+      aiActionsMenu.classList.toggle('show');
+      const expanded = aiActionsMenu.classList.contains('show');
+      aiDropdownToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    });
+
+    document.addEventListener('click', function() {
+      if (aiActionsMenu.classList.contains('show')) {
+        aiActionsMenu.classList.remove('show');
+        aiDropdownToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    aiActionsMenu.addEventListener('click', function(event) {
+      event.stopPropagation();
+    });
+  }
+
+  $('#btnInsertKb').on('click', function() {
+    alert('Action front-end : Insérer dans la KB');
+  });
+  $('#btnManageKb').on('click', function() {
+    alert('Action front-end : Gérer la KB');
+  });
+  $('#btnClearChatHistory').on('click', function() {
+    alert('Action front-end : Supprimer l\'historique de conversation');
+  });
+
+  const chatInput = document.getElementById('chatInput') as HTMLTextAreaElement | null;
+  if (chatInput) {
+    const resizeTextarea = () => {
+      chatInput.style.height = 'auto';
+      chatInput.style.height = Math.min(chatInput.scrollHeight, 180) + 'px';
+    };
+
+    chatInput.addEventListener('input', resizeTextarea);
+    resizeTextarea();
+  }
 
   $("#DragDiv").on("dragenter dragover", function(e){ e.preventDefault(); e.stopPropagation(); $(this).addClass("active"); });
   $("#DragDiv").on("dragleave drop", function(e){ e.preventDefault(); e.stopPropagation(); $(this).removeClass("active"); });

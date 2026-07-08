@@ -15,23 +15,78 @@
   <main class="container py-3" style="max-width: 1600px;">
     
     <!--Main Container-->
-    <div style="flex:1;display:flex;flex-flow: column;">
+    <div style="flex:1;display:flex;flex-flow: column; min-height:0;">
 
-      <div class="bg-dark-light rounded-bottom" style="flex:1;margin:1em;margin-left:0;">
+      <div class="bg-dark-light rounded-bottom d-flex flex-column" style="flex:1;min-height:0;margin:1em;margin-left:0;">
 
         <ul class="nav nav-tabs">
           <li class="nav-item">
-            <a class="nav-link active" id="btnGeneral" href="#">General</a>
+            <a class="nav-link active" id="btnAI" href="#">AI Prompt</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" id="btnBreakdown" href="#">Break down</a>
+            <a class="nav-link" id="btnGeneral" href="#">General stats</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="btnBreakdown" href="#">Breakdown</a>
           </li>
         </ul>
 
-        <div class="p-1 py-2 text-white" id="divGeneral">
-          <p>Contenu Général ..</p>
+        <!--AI Prompt-->
+        <div class="p-1 py-2 text-white d-flex flex-fill" id="divAI" style="flex:1; min-height:0; display:flex;">
+          <div class="d-flex flex-column flex-lg-row gap-3 flex-fill" style="flex:1; min-height:0;">
+            <div class="d-flex flex-column flex-fill rounded p-2" style="flex:1; min-height:0;">
+              
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h5 class="mb-1">Conversation</h5>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                  <button class="btn btn-outline-light btn-sm p-2" type="button" id="btnFullscreen">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                  </button>
+                  <div class="dropdown position-relative">
+                    <button class="btn btn-outline-light btn-sm p-2" type="button" id="aiActionsDropdown" aria-expanded="false">
+                      <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="aiActionsDropdown" id="aiActionsMenu">
+                      <li><button class="dropdown-item" type="button" id="btnInsertKb">Insérer dans la KB</button></li>
+                      <li><button class="dropdown-item" type="button" id="btnManageKb">Gérer la KB</button></li>
+                      <li><button class="dropdown-item text-danger" type="button" id="btnClearChatHistory">Supprimer l'historique de conversation</button></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div id="chatMessages" class="chat-messages overflow-auto mb-3 border border-secondary rounded" style="flex:1 1 auto; min-height:0; background:#111; padding:1rem;">
+                <div class="text-muted small">Démarrez la conversation en écrivant votre message ci-dessous.</div>
+              </div>
+              <div class="chat-input-wrapper mt-2">
+                <textarea id="chatInput" rows="1" class="flex-grow-1 text-white border border-secondary rounded p-3" style="background:#111; resize:none; overflow:hidden;" placeholder="Écrire un message..." aria-label="Chat message"></textarea>
+                <button id="sendChatBtn" class="chat-send-button btn btn-danger" type="button" aria-label="Envoyer">
+                  <i class="bi bi-arrow-up"></i>
+                </button>
+              </div>
+
+              </div>
+
+            <div class="d-flex flex-column rounded p-2" style="flex:1; min-width:280px; max-width:360px; min-height:0;">
+              <div class="mb-3">
+                <h5 class="mb-1">Instructions</h5>
+              </div>
+              <textarea id="chatInstructions" class="form-control text-white border border-secondary mb-3 flex-fill" style="flex:1; min-height:0;background:#111;" placeholder="Exemple : répondre en français, privilégier les analyses de trading, détailler les risques, etc."></textarea>
+              <button id="applyInstructionsBtn" type="button" class="btn btn-outline-danger w-100">Appliquer</button>
+            </div>
+
+          </div>
+        </div>
+
+        <!--General Stats-->
+        <div class="p-1 py-2 text-white d-none" id="divGeneral">
+          <p>General Stats ..</p>
         </div> 
 
+        <!--Breakdown-->
         <div class="p-1 py-2 text-white d-none" id="divBreakdown">
           <div>
 
@@ -65,7 +120,7 @@
           </table>
           </div>
 
-          </div>
+        </div>
           
         </div>      
 
@@ -116,13 +171,47 @@
       <!--Setting Container-->
       <div class="p-1 py-2 text-white d-none" id="divSettings">
         
-        <div class="input-group mt-3">
+        <div style="display:flex;align-items:center;column-gap:10px;">
+          <button id="btnSaveSettings" type="button" class="btn btn-outline-danger">Save</button>
+          <span class="bg-dark text-secondary flex-grow-1" style="text-align:right;">KB</span>
+          <button type="button" class="btn btn-outline-secondary text-secondary">Load</button>
+          <button type="button" class="btn btn-outline-secondary text-secondary">Export</button>
+        </div>
+
+        <div class="input-group mt-4">
           <span class="input-group-text bg-dark">Capital de trading</span>
           <input type="number" class="form-control" id="iCapital" style="text-align:right;" >
           <span class="input-group-text bg-dark">$</span>
         </div>
-        <div class="mt-3">
-          <button id="btnSaveSettings" type="button" class="btn btn-danger">Save</button>
+
+        <div class="mt-4 p-3 rounded-3 border border-secondary bg-dark">
+          <div class="mb-3">
+            <h5 class="mb-3">Backup Cloud</h5>
+            <label for="iBackupHost" class="form-label">Hôte</label>
+            <input type="text" class="form-control" id="iBackupHost" placeholder="Ex: backup.example.com">
+          </div>
+          <button id="btnTestBackupConnection" type="button" class="btn btn-outline-danger">Tester connexion</button>
+        </div>
+
+        <div class="mt-4 p-3 rounded-3 border border-secondary bg-dark">
+          <div class="mb-3">
+            <h5 class="mb-3">Serveur local</h5>
+            <label for="iLocalHost" class="form-label">Hôte</label>
+            <input type="text" class="form-control" id="iLocalHost" placeholder="Ex: localhost">
+          </div>
+          <div class="mb-3">
+            <label for="iLocalPort" class="form-label">Port</label>
+            <input type="number" class="form-control" id="iLocalPort" placeholder="Ex: 8080">
+          </div>
+          <div class="mb-3">
+            <label for="iLocalUsername" class="form-label">Nom d'utilisateur</label>
+            <input type="text" class="form-control" id="iLocalUsername" placeholder="Ex: admin">
+          </div>
+          <div class="mb-3">
+            <label for="iLocalPassword" class="form-label">Mot de passe</label>
+            <input type="password" class="form-control" id="iLocalPassword" placeholder="Mot de passe">
+          </div>
+          <button id="btnTestLocalConnection" type="button" class="btn btn-outline-danger">Tester connexion</button>
         </div>
 
       </div>      
