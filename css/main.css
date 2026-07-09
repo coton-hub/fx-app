@@ -141,3 +141,23 @@ main {
   font-weight:lighter;
   border-color: #4d5154;
 }
+
+#kbTags::placeholder {
+  color: #a0a0a0; /* Un gris clair visible sur fond noir */
+  opacity: 1;    /* Firefox baisse l'opacité par défaut, on la force à 1 */
+}
+#chatInstructions::placeholder {
+  color: #a0a0a0; /* Un gris clair visible sur fond noir */
+  opacity: 1;    /* Firefox baisse l'opacité par défaut, on la force à 1 */
+}
+textarea:focus,
+#chatInstructions:focus {
+  border-color: #444444; /* Une bordure un peu plus claire au clic */
+  background-color: #1a1a1a; /* Optionnel : changer légèrement le fond */
+  
+  /* On génère notre propre lueur (ici grise à 50% d'opacité) */
+  box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.15); 
+  
+  /* On s'assure que le vrai outline du navigateur est désactivé */
+  outline: 0;
+}

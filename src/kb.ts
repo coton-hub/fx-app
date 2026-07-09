@@ -6,6 +6,8 @@ export class KB {
     Date:Date;
     Entry:string;
     Commentaire:string;
+    Tags:string;
+    Pair:string;
     Analyste:string;
     WebSiteUrl:string;
 
@@ -15,6 +17,8 @@ export class KB {
         this.Date = new Date();
         this.Entry = "";
         this.Commentaire = "";
+        this.Tags = "";
+        this.Pair = '';
         this.Analyste = "";
         this.WebSiteUrl = "";
     }
@@ -26,6 +30,8 @@ export class KB {
             Date: this.Date,
             Entry: this.Entry,
             Commentaire: this.Commentaire,
+            Tags: this.Tags,
+            Pair: this.Pair,
             Analyste: this.Analyste,
             WebSiteUrl: this.WebSiteUrl
         };

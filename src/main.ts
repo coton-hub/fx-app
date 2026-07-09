@@ -20,6 +20,27 @@ function AddClass(elements: HTMLElement[], className: string): void {
     $(element).addClass(className);
   });
 }
+
+// Fonction pour afficher un toast dynamique
+function showToast(titre: string, message: string, type: 'success' | 'danger' = 'success'): void {
+  const bgColor = type === 'success' ? 'bg-success' : 'bg-danger';
+  
+  // Mettre à jour le header
+  const toastHeader = $('#toastHeader');
+  toastHeader.removeClass('bg-success bg-danger').addClass(bgColor).addClass('text-white');
+  
+  // Mettre à jour le titre et le message
+  $('#toastTitle').text(titre);
+  $('#toastMessage').text(message);
+  
+  // Afficher le toast
+  const toastElement = document.getElementById('settingSavedToast');
+  if (toastElement) {
+    const toast = new Toast(toastElement);
+    toast.show();
+  }
+}
+
 // TypeScript entry point for Forex App
 $(function() {
 
@@ -42,34 +63,46 @@ $(function() {
   
   //Events
   $('#btnTrades').on('click', function() {
+    AddClass(new Array(...$('#divSettings'), ...$('#divInstructions')), 'd-none');
+    RemoveClass(new Array(...$("#btnSettings"), ...$("#btnInstructions")), 'active');
     $("#divTrades").removeClass('d-none');
-    $("#divSettings").addClass('d-none');
     $("#btnTrades").addClass('active');
-    $("#btnSettings").removeClass('active');
   });
   $('#btnSettings').on('click', function() {
-    $("#divTrades").addClass('d-none');
+    AddClass(new Array(...$('#divTrades'), ...$('#divInstructions')), 'd-none');
+    RemoveClass(new Array(...$("#btnTrades"), ...$("#btnInstructions")), 'active');
     $("#divSettings").removeClass('d-none');
-    $("#btnTrades").removeClass('active');
     $("#btnSettings").addClass('active');
+  });
+  $('#btnInstructions').on('click', function() {
+    AddClass(new Array(...$('#divTrades'), ...$('#divSettings')), 'd-none');
+    RemoveClass(new Array(...$("#btnTrades"), ...$("#btnSettings")), 'active');
+    $("#divInstructions").removeClass('d-none');
+    $("#btnInstructions").addClass('active');
   });
   $('#btnAI').on('click', function() {
     AddClass(new Array(...$('#divGeneral'), ...$('#divBreakdown')), 'd-none');
     RemoveClass(new Array(...$("#btnGeneral"), ...$("#btnBreakdown")), 'active');
     $("#divAI").removeClass('d-none');
     $("#btnAI").addClass('active');
+    $('#btnInstructions').removeClass('d-none');
+    $("#btnInstructions").trigger('click');
   });
   $('#btnGeneral').on('click', function() {
     AddClass(new Array(...$('#divAI'), ...$('#divBreakdown')), 'd-none');
     RemoveClass(new Array(...$("#btnAI"), ...$("#btnBreakdown")), 'active');
     $("#divGeneral").removeClass('d-none');
     $("#btnGeneral").addClass('active');
+    $("#btnTrades").trigger('click');
+    $('#btnInstructions').addClass('d-none');
   });
   $('#btnBreakdown').on('click', function() {
     AddClass(new Array(...$('#divAI'), ...$('#divGeneral')), 'd-none');
     RemoveClass(new Array(...$("#btnAI"), ...$("#btnGeneral")), 'active');
     $("#divBreakdown").removeClass('d-none');
     $("#btnBreakdown").addClass('active');
+    $("#btnTrades").trigger('click');
+    $('#btnInstructions').addClass('d-none');
   });
   $('#btnSaveSettings').on('click', function() {
 
@@ -87,11 +120,11 @@ $(function() {
 
       $('#btnTrades').trigger('click');
 
-      const toast = new Toast($('#settingSavedToast'));
-      toast.show();
+      showToast('Succès', 'Settings enregistré avec succès', 'success');
     });
   });
 
+  //Menu contextuel pour les actions AI
   const aiDropdownToggle = document.getElementById('aiActionsDropdown');
   const aiActionsMenu = document.getElementById('aiActionsMenu');
 
@@ -116,6 +149,7 @@ $(function() {
     });
   }
 
+  // Insert KB Entry
   $('#btnInsertKb').on('click', function() {
     // Initialiser la date du jour
     const today = new Date().toISOString().split('T')[0];
@@ -124,8 +158,13 @@ $(function() {
     // Réinitialiser les autres champs
     $('#kbEntry').val('');
     $('#kbCommentaire').val('');
+    $('#kbTagsList').empty();
+    $('#kbTags').val('');
+    $('#kbPair').val('');
     $('#kbAnalyste').val('');
     $('#kbWebSiteUrl').val('');
+    
+    tags = [];
     
     // Afficher le modal
     const modalElement = document.getElementById('modalInsertKb');
@@ -149,6 +188,8 @@ $(function() {
     kb.Date = new Date(date);
     kb.Entry = entry;
     kb.Commentaire = $('#kbCommentaire').val()?.toString() || '';
+    kb.Tags = tags.join(', ');
+    kb.Pair = $('#kbPair').val()?.toString() || '';
     kb.Analyste = $('#kbAnalyste').val()?.toString() || '';
     kb.WebSiteUrl = $('#kbWebSiteUrl').val()?.toString() || '';
     
@@ -165,9 +206,58 @@ $(function() {
     }
     
     // Afficher un message de confirmation
-    const toast = new Toast($('#settingSavedToast'));
-    toast.show();
+    showToast('Succès', 'Entrée KB insérée avec succès', 'success');
   });
+  
+  // Gestion des tags avec séparation par virgule
+  let tags: string[] = [];
+  
+  $('#kbTags').on('keydown', function(e: any) {
+    const input = $(this);
+    let currentValue = input.val()?.toString().trim() || '';
+    
+    // Vérifier si la touche est une virgule
+    if (e.key === ',' || e.keyCode === 188) {
+      e.preventDefault();
+      
+      // Récupérer le texte avant la virgule
+      const tag = currentValue.replace(',', '').trim();
+      
+      // Ajouter le tag s'il n'est pas vide et pas un doublon
+      if (tag && !tags.includes(tag)) {
+        tags.push(tag);
+        updateTagsDisplay();
+        input.val('');
+      }
+    }
+  });
+  
+  // Fonction pour afficher les tags
+  function updateTagsDisplay() {
+    const tagsList = $('#kbTagsList');
+    tagsList.empty();
+    
+    tags.forEach((tag, index) => {
+      const tagBadge = $(`
+        <span class="badge bg-danger me-2 mb-2">
+          ${tag}
+          <button type="button" class="btn-close btn-close-white ms-2" data-index="${index}" style="font-size: 0.75rem;"></button>
+        </span>
+      `);
+      tagsList.append(tagBadge);
+    });
+    
+    // Mettre à jour le champ caché avec tous les tags
+    $('#kbTags').data('tags', tags);
+  }
+  
+  // Supprimer un tag au clic sur le bouton close
+  $(document).on('click', '#kbTagsList .btn-close', function() {
+    const index = $(this).data('index');
+    tags.splice(index, 1);
+    updateTagsDisplay();
+  });
+  
   $('#btnManageKb').on('click', function() {
     alert('Action front-end : Gérer la KB');
   });
