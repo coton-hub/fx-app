@@ -150,6 +150,26 @@ main {
   color: #a0a0a0; /* Un gris clair visible sur fond noir */
   opacity: 1;    /* Firefox baisse l'opacité par défaut, on la force à 1 */
 }
+.ai-action-btn {
+  color: white;
+  background: transparent;
+  border: 0;
+  padding: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+.ai-action-btn:hover,
+.ai-action-btn:focus {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+  outline: none;
+}
+.ai-action-btn:active {
+  transform: translateY(0);
+}
 textarea:focus,
 #chatInstructions:focus {
   border-color: #444444; /* Une bordure un peu plus claire au clic */

@@ -3,46 +3,18 @@ import 'bootstrap/dist/js/bootstrap.bundle.js';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../css/main.css';
 import {Toast, Modal} from 'bootstrap';
+//import { create, insertMultiple, search, Orama } from '@orama/orama';
 import $ from "jquery";
-import { Trade, OrderType } from './trade.ts';
-import { Database } from './database.ts';
-import { KB } from './kb.ts';
+import { Trade, OrderType } from './poco/trade.ts';
+import { Database } from './poco/database.ts';
+import { KB } from './poco/kb.ts';
+import { AI } from './poco/ai.ts';
 
 const COMPTE_SELECT = 4735924;
-
-function RemoveClass(elements: HTMLElement[], className: string): void {
-  elements.forEach((element) => {
-    $(element).removeClass(className);
-  });
-}
-function AddClass(elements: HTMLElement[], className: string): void {
-  elements.forEach((element) => {
-    $(element).addClass(className);
-  });
-}
-
-// Fonction pour afficher un toast dynamique
-function showToast(titre: string, message: string, type: 'success' | 'danger' = 'success'): void {
-  const bgColor = type === 'success' ? 'bg-success' : 'bg-danger';
-  
-  // Mettre à jour le header
-  const toastHeader = $('#toastHeader');
-  toastHeader.removeClass('bg-success bg-danger').addClass(bgColor).addClass('text-white');
-  
-  // Mettre à jour le titre et le message
-  $('#toastTitle').text(titre);
-  $('#toastMessage').text(message);
-  
-  // Afficher le toast
-  const toastElement = document.getElementById('settingSavedToast');
-  if (toastElement) {
-    const toast = new Toast(toastElement);
-    toast.show();
-  }
-}
+//let oramaDb: Orama<any>;
 
 // TypeScript entry point for Forex App
-$(function() {
+$(async function() {
 
   //Autorisation
   if (navigator.storage && navigator.storage.persist) {
@@ -60,8 +32,39 @@ $(function() {
       $('#iCapital').val(req_capital.result.capital);
     }
   });
-  
-  //Events
+
+  //Orama
+  // oramaDb = await create({
+  //     schema: {
+  //         entry: 'string', //texte brute
+  //         embedding: 'vector[768]',
+  //     },
+  // });
+
+  // const kbs = await Database.GetAllKBEntries();
+  // console.log(kbs);
+  // const documentOrama = kbs.map(kb => ({
+  //     entry: kb.GetTextToEmbed(),
+  //     embedding: Array.from(kb.Embedding!)
+  // }));
+
+  // await insertMultiple(oramaDb, documentOrama);
+
+  // const vector_user_prompt = await AI.GenerateEmbedding("What is the dynamic with the pair EUR/USD?");
+  // const searchResults = await search(oramaDb, {
+  //   mode:'vector',
+  //   vector: {
+  //     value: Array.from(vector_user_prompt),
+  //     property:'embedding'
+  //   },
+  //   similarity:0.68
+  // });
+  // console.log(searchResults);
+  // searchResults.hits.forEach(hit => {
+  //   console.log(`Entry: ${hit.document.entry}, Score: ${hit.score}`);
+  // });
+
+  // #region Events
   $('#btnTrades').on('click', function() {
     AddClass(new Array(...$('#divSettings'), ...$('#divInstructions')), 'd-none');
     RemoveClass(new Array(...$("#btnSettings"), ...$("#btnInstructions")), 'active');
@@ -124,35 +127,51 @@ $(function() {
     });
   });
 
-  //Menu contextuel pour les actions AI
-  const aiDropdownToggle = document.getElementById('aiActionsDropdown');
-  const aiActionsMenu = document.getElementById('aiActionsMenu');
-
-  if (aiDropdownToggle && aiActionsMenu) {
-
-    aiDropdownToggle.addEventListener('click', function(event) {
-      event.stopPropagation();
-      aiActionsMenu.classList.toggle('show');
-      const expanded = aiActionsMenu.classList.contains('show');
-      aiDropdownToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  // Insert KB Entry
+  function saveKbEntry(keepModalOpen: boolean): void {
+    const date = $('#kbDate').val()?.toString();
+    const entry = $('#kbEntry').val()?.toString();
+    
+    if (!date || !entry) {
+      alert('Les champs Date et Entry sont obligatoires');
+      return;
+    }
+    
+    const kb = new KB(0);
+    kb.Date = new Date(date);
+    kb.Entry = entry;
+    kb.Comment = $('#kbCommentaire').val()?.toString() || '';
+    kb.Tags = tags.join(', ');
+    kb.Currency = $('#kbPair').val()?.toString() || '';
+    kb.Analyst = $('#kbAnalyste').val()?.toString() || '';
+    kb.WebSiteUrl = $('#kbWebSiteUrl').val()?.toString() || '';
+    
+    kb.Insert().then(() => {
+      AI.GenerateEmbedding(kb.GetTextToEmbed()).then((embedding) => {
+        kb.Embedding = embedding;
+        kb.UpdateEmbedding();
+      });
     });
-
-    document.addEventListener('click', function() {
-      if (aiActionsMenu.classList.contains('show')) {
-        aiActionsMenu.classList.remove('show');
-        aiDropdownToggle.setAttribute('aria-expanded', 'false');
+    
+    if (!keepModalOpen) {
+      const modalElement = document.getElementById('modalInsertKb');
+      if (modalElement) {
+        const modal = Modal.getInstance(modalElement);
+        if (modal) {
+          modal.hide();
+        }
       }
-    });
-
-    aiActionsMenu.addEventListener('click', function(event) {
-      event.stopPropagation();
-    });
+    } else {
+      $('#kbEntry').val('');
+      $('#kbCommentaire').val('');
+    }
+    
+    showToast('Succès', 'Entrée KB insérée avec succès', 'success');
   }
 
-  // Insert KB Entry
   $('#btnInsertKb').on('click', function() {
-    // Initialiser la date du jour
-    const today = new Date().toISOString().split('T')[0];
+    // Initialiser la date du jour selon la timezone Toronto
+    const today = new Date().toLocaleDateString();
     $('#kbDate').val(today);
     
     // Réinitialiser les autres champs
@@ -174,39 +193,10 @@ $(function() {
     }
   });  
   $('#btnSaveKbEntry').on('click', function() {
-    // Valider que les champs obligatoires sont remplis
-    const date = $('#kbDate').val()?.toString();
-    const entry = $('#kbEntry').val()?.toString();
-    
-    if (!date || !entry) {
-      alert('Les champs Date et Entry sont obligatoires');
-      return;
-    }
-    
-    // Créer une nouvelle instance KB
-    const kb = new KB(0);
-    kb.Date = new Date(date);
-    kb.Entry = entry;
-    kb.Commentaire = $('#kbCommentaire').val()?.toString() || '';
-    kb.Tags = tags.join(', ');
-    kb.Pair = $('#kbPair').val()?.toString() || '';
-    kb.Analyste = $('#kbAnalyste').val()?.toString() || '';
-    kb.WebSiteUrl = $('#kbWebSiteUrl').val()?.toString() || '';
-    
-    // Insérer dans la base de données
-    kb.Insert();
-    
-    // Fermer le modal
-    const modalElement = document.getElementById('modalInsertKb');
-    if (modalElement) {
-      const modal = Modal.getInstance(modalElement);
-      if (modal) {
-        modal.hide();
-      }
-    }
-    
-    // Afficher un message de confirmation
-    showToast('Succès', 'Entrée KB insérée avec succès', 'success');
+    saveKbEntry(false);
+  });
+  $('#btnSaveKbEntryAndNext').on('click', function() {
+    saveKbEntry(true);
   });
   
   // Gestion des tags avec séparation par virgule
@@ -259,7 +249,10 @@ $(function() {
   });
   
   $('#btnManageKb').on('click', function() {
-    alert('Action front-end : Gérer la KB');
+    alert('Action front-end : My KB');
+  });
+  $('#btnEconomicCalendar').on('click', function() {
+    alert('Action front-end : Calendrier économique');
   });
   $('#btnClearChatHistory').on('click', function() {
     alert('Action front-end : Supprimer l\'historique de conversation');
@@ -414,10 +407,10 @@ $(function() {
           
         });
   });
-
+  // #endregion
 })
 
-//Functions
+// #region Functions
 function LireRapport(report:string) 
 {
     const trades: Trade[] = [];
@@ -666,4 +659,35 @@ function ObtenirSemaineDuMois(date: Date): number {
     return numeroSemaine;
 }
 
+function RemoveClass(elements: HTMLElement[], className: string): void {
+  elements.forEach((element) => {
+    $(element).removeClass(className);
+  });
+}
+function AddClass(elements: HTMLElement[], className: string): void {
+  elements.forEach((element) => {
+    $(element).addClass(className);
+  });
+}
+
+// Fonction pour afficher un toast dynamique
+function showToast(titre: string, message: string, type: 'success' | 'danger' = 'success'): void {
+  const bgColor = type === 'success' ? 'bg-success' : 'bg-danger';
+  
+  // Mettre à jour le header
+  const toastHeader = $('#toastHeader');
+  toastHeader.removeClass('bg-success bg-danger').addClass(bgColor).addClass('text-white');
+  
+  // Mettre à jour le titre et le message
+  $('#toastTitle').text(titre);
+  $('#toastMessage').text(message);
+  
+  // Afficher le toast
+  const toastElement = document.getElementById('settingSavedToast');
+  if (toastElement) {
+    const toast = new Toast(toastElement);
+    toast.show();
+  }
+}
+// #endregion
 

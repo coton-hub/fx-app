@@ -36,17 +36,19 @@
                   <h5 class="mb-1">Conversation</h5>
                 </div>
 
-                <div class="d-flex align-items-center gap-2">
-                  <div class="dropdown position-relative">
-                    <button class="btn btn-outline-light btn-sm p-2" type="button" id="aiActionsDropdown" aria-expanded="false">
-                      <i class="bi bi-three-dots-vertical"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="aiActionsDropdown" id="aiActionsMenu">
-                      <li><button class="dropdown-item" type="button" id="btnInsertKb">Insérer dans la KB</button></li>
-                      <li><button class="dropdown-item" type="button" id="btnManageKb">Gérer la KB</button></li>
-                      <li><button class="dropdown-item text-danger" type="button" id="btnClearChatHistory">Supprimer l'historique de conversation</button></li>
-                    </ul>
-                  </div>
+                <div class="d-flex align-items-center gap-2" id="aiActionBar">
+                  <button class="btn ai-action-btn" type="button" id="btnInsertKb" title="Ajouter à la KB" aria-label="Ajouter à la KB">
+                    <i class="bi bi-plus-lg fs-4"></i>
+                  </button>
+                  <button class="btn ai-action-btn" type="button" id="btnManageKb" title="My KB" aria-label="My KB">
+                    <i class="bi bi-bookmarks fs-4"></i>
+                  </button>
+                  <button class="btn ai-action-btn" type="button" id="btnEconomicCalendar" title="Calendrier économique" aria-label="Calendrier économique">
+                    <i class="bi bi-calendar-event fs-4"></i>
+                  </button>
+                  <button class="btn ai-action-btn" type="button" id="btnClearChatHistory" title="Supprimer l'historique de conversation" aria-label="Supprimer l'historique de conversation">
+                    <i class="bi bi-trash fs-4 text-danger"></i>
+                  </button>
                 </div>
               </div>
 
@@ -240,7 +242,7 @@
                 <div id="kbTagsList" class="mt-2"></div>
               </div>
               <div class="mb-3">
-                <label for="kbPair" class="form-label text-white">Pair</label>
+                <label for="kbPair" class="form-label text-white">Currency</label>
                 <input type="text" class="form-control bg-dark border-secondary text-white" id="kbPair">
               </div>
               <div class="mb-3">
@@ -254,8 +256,9 @@
             </form>
           </div>
           <div class="modal-footer border-secondary">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <button type="button" class="btn btn-danger" id="btnSaveKbEntry">Insérer</button>
+            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-outline-danger" id="btnSaveKbEntry">Insérer</button>
+            <button type="button" class="btn btn-outline-danger" id="btnSaveKbEntryAndNext">Insérer et suivant</button>
           </div>
         </div>
       </div>

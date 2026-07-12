@@ -1,3 +1,5 @@
+import { KB } from "./kb";
+
 export class Database {
 
   // DB Constants
@@ -28,6 +30,36 @@ export class Database {
 
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
+    });
+  }
+  static GetAllKBEntries(): Promise<KB[]> {
+    return new Promise<KB[]>((resolve, reject) => {
+
+      const pdb = Database.OpenDB();
+      pdb.then((db) => {
+
+        const tx = db.transaction(Database.DB_STORE_NAME_KB, 'readonly');
+        const store = tx.objectStore(Database.DB_STORE_NAME_KB);
+        const req = store.getAll();
+
+        req.onsuccess = () => {
+          const entries: KB[] = req.result.map((entry: any) => {
+            const kbEntry = new KB(entry.id);
+            kbEntry.Date = new Date(entry.Date);
+            kbEntry.Entry = entry.Entry;
+            kbEntry.Comment = entry.Comment;
+            kbEntry.Tags = entry.Tags;
+            kbEntry.Currency = entry.Currency;
+            kbEntry.Analyst = entry.Analyst;
+            kbEntry.WebSiteUrl = entry.WebSiteUrl;
+            kbEntry.Embedding = entry.Embedding;
+            return kbEntry;
+          });
+          resolve(entries);
+        };
+
+        req.onerror = () => reject(req.error);
+      });
     });
   }
 
