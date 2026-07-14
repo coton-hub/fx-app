@@ -181,3 +181,18 @@ textarea:focus,
   /* On s'assure que le vrai outline du navigateur est désactivé */
   outline: 0;
 }
+
+@media (min-width: 1200px) {
+  .modal-xl {
+    --bs-modal-width: 100%;
+    max-width: 1600px;
+  }
+}
+
+.forex-alt-row {
+  background-color: var(--bs-table-striped-bg) !important;
+}
+.input-placeholder::placeholder {
+  color: #a0a0a0; /* Un gris clair visible sur fond noir */
+  opacity: 1;    /* Firefox baisse l'opacité par défaut, on la force à 1 */
+}

@@ -2,13 +2,14 @@ import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap/dist/js/bootstrap.bundle.js';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../css/main.css';
-import {Toast, Modal} from 'bootstrap';
+import {Toast, Modal, Tab} from 'bootstrap';
 //import { create, insertMultiple, search, Orama } from '@orama/orama';
 import $ from "jquery";
 import { Trade, OrderType } from './poco/trade.ts';
 import { Database } from './poco/database.ts';
 import { KB } from './poco/kb.ts';
 import { AI } from './poco/ai.ts';
+import { EconomicEvent } from './poco/economicEvent.ts'
 
 const COMPTE_SELECT = 4735924;
 //let oramaDb: Orama<any>;
@@ -33,6 +34,11 @@ $(async function() {
     }
   });
 
+  const today = new Date();
+  const sunday = GetStartOfWeek(today);
+  $('#lblSemaine').html('Semaine du ' + sunday.toLocaleDateString('fr-CA', {day:'2-digit', month:'long', year:'numeric'}))
+  .attr('data-date', sunday.toLocaleDateString('en-CA'));
+
   //Orama
   // oramaDb = await create({
   //     schema: {
@@ -41,8 +47,8 @@ $(async function() {
   //     },
   // });
 
-  // const kbs = await Database.GetAllKBEntries();
-  // console.log(kbs);
+  //const kbs = await KB.GetAllKBEntries();
+  //console.log(kbs);
   // const documentOrama = kbs.map(kb => ({
   //     entry: kb.GetTextToEmbed(),
   //     embedding: Array.from(kb.Embedding!)
@@ -247,13 +253,351 @@ $(async function() {
     tags.splice(index, 1);
     updateTagsDisplay();
   });
+
+  // My knowledge base et Economic calendar
+  async function loadKbEntries(): Promise<void> {
+    const tbody = $('#kbTableBody');
+    tbody.empty();
+
+    try {
+      const entries = await KB.GetAllKBEntries();
+
+      if (!entries.length) {
+        tbody.append('<tr><td colspan="9" class="text-center text-secondary">Aucune entrée KB</td></tr>');
+        return;
+      }
+
+      entries.sort((a, b) => b.Id - a.Id);
+
+      entries.forEach((entry) => {
+        const dateValue = entry.Date.toISOString().split('T')[0];
+        tbody.append(`
+          <tr>
+            <td><input type="checkbox" class="form-check-input entry-checkbox" data-id="${entry.Id}"></td>
+            <td>${entry.Id}</td>
+            <td>${dateValue}</td>
+            <td style="max-width: 800px;"><div class="text-break">${entry.Entry || ''}</div></td>
+            <td><div class="text-break">${entry.Comment || ''}</div></td>
+            <td>${entry.Tags || ''}</td>
+            <td>${entry.Currency || ''}</td>
+            <td>${entry.Analyst || ''}</td>
+            <td style="text-align:center;">${entry.WebSiteUrl ? `<button onclick="window.open('${entry.WebSiteUrl}', '_blank')" class="btn btn-link text-white p-0" title="Ouvrir le lien"><i class="bi bi-box-arrow-up-right"></i></button>` : ''}</td>
+          </tr>
+        `);
+      });
+    } catch (error) {
+      tbody.append('<tr><td colspan="9" class="text-center text-danger">Impossible de charger les entrées KB</td></tr>');
+      console.error(error);
+    }
+
+    if (rowIsChecked(document.getElementById('tblKb'))) $('#divOptionsKb').removeClass('d-none');
+    else $('#divOptionsKb').addClass('d-none');
+  }
+
+  function showKbCalendarModal(tabId: 'myKb' | 'economicCalendar'): void {
+    const modalElement = document.getElementById('modalKbCalendar');
+    if (!modalElement) return;
+
+    const modal = new Modal(modalElement);
+    modal.show();
+
+    const tabSelector = tabId === 'economicCalendar' ? '#tabEconomicCalendar-tab' : '#tabMyKb-tab';
+    const tabButton = document.querySelector<HTMLButtonElement>(tabSelector);
+    if (tabButton) {
+      const tab = new Tab(tabButton);
+      tab.show();
+    }
+  }
   
-  $('#btnManageKb').on('click', function() {
-    alert('Action front-end : My KB');
+  // Toggle select all
+  $('#selectAllCheckbox').on('change', function() {
+    const isChecked = $(this).is(':checked');
+    $('.entry-checkbox').prop('checked', isChecked);
+
+    if (rowIsChecked(document.getElementById('tblKb'))) $('#divOptionsKb').removeClass('d-none');
+    else $('#divOptionsKb').addClass('d-none');
   });
-  $('#btnEconomicCalendar').on('click', function() {
-    alert('Action front-end : Calendrier économique');
+  $(document).on('change', '.entry-checkbox', function() {
+    if (rowIsChecked(document.getElementById('tblKb'))) $('#divOptionsKb').removeClass('d-none');
+    else $('#divOptionsKb').addClass('d-none');
   });
+  $('#btnDeselectAll').on('click', function() {
+    $('#selectAllCheckbox').prop('checked', false);
+    $('#selectAllCheckbox').trigger('change');
+  });
+  function rowIsChecked(table:HTMLElement | null):boolean {
+    if (!table) return false;
+
+    const checked_rows = table.querySelectorAll('tr:has(.entry-checkbox:checked)');
+    
+    if (checked_rows.length > 0) return true;
+    else return false;
+  }
+
+  // Regenerate embedding button
+  $('#regenerateEmbedding').on('click', function() {
+    const checkedIds = $('.entry-checkbox:checked').map(function() {
+      return $(this).data('id');
+    }).get();
+
+    if (checkedIds.length === 0) {
+      alert('Veuillez sélectionner au moins une entrée');
+      return;
+    }
+
+    console.log('Regénerer embedding pour les IDs:', checkedIds);
+    alert(`Action: Regénerer embedding pour ${checkedIds.length} entrée(s)`);
+  });
+
+  // Delete entries button
+  $('#deleteEntries').on('click', function() {
+    const checkedIds = $('#tblKb .entry-checkbox:checked').map(function() {
+      return $(this).data('id');
+    }).get();
+
+    if (checkedIds.length === 0) {
+      alert('Veuillez sélectionner au moins une entrée');
+      return;
+    }
+
+    if (confirm(`Êtes-vous sûr de vouloir supprimer ${checkedIds.length} entrée(s) ?`)) {
+      
+      const promises:Promise<void>[] = [];
+      checkedIds.forEach((id) => {
+          var p = new Promise<void>((resolve, reject) => {
+              var res = KB.DeleteKbEntry(id);
+              res.then(() => resolve())
+              .catch((err) => reject(err));
+          });
+          promises.push(p);
+      });
+
+      Promise.all(promises).then(() => {
+        loadKbEntries();
+        showToast('Élément(s) supprimé(s)', 'Élément(s) supprimé(s) avec succès', 'success');
+      })
+      .catch((error) => { 
+        alert('Erreur lors de la suppression, veuillez réessayer');
+        loadKbEntries();
+        console.log(JSON.stringify(error));
+       });
+    }
+  }); 
+
+  $('#btnManageKb').on('click', async function() {
+    await loadKbEntries();
+    await loadEconomicEventCalendar(new Date());
+    showKbCalendarModal('myKb');
+  });
+
+  //Economic Calendar
+  $('#btnEconomicCalendar').on('click', async function() {
+    await loadKbEntries();
+    await loadEconomicEventCalendar(new Date());
+    showKbCalendarModal('economicCalendar');
+  });
+
+  $('#btnSemainePrecedente').on('click', function() {
+    const current_date_str = $('#lblSemaine').attr('data-date');
+    if (!current_date_str) return;
+
+    const parts = current_date_str.split('-');
+    const current_date = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+    
+    current_date.setDate(current_date.getDate()-1);
+    
+    const prev_sunday = GetStartOfWeek(current_date);
+    $('#lblSemaine').html('Semaine du ' + prev_sunday.toLocaleDateString('fr-CA', {day:'2-digit', month:'long', year:'numeric'}))
+    .attr('data-date', prev_sunday.toLocaleDateString('en-CA'));
+
+    loadEconomicEventCalendar(prev_sunday);
+  });
+  $('#btnSemaineSuivante').on('click', function() {
+    const current_date_str = $('#lblSemaine').attr('data-date');
+    if (!current_date_str) return;
+
+    const parts = current_date_str.split('-');
+    const current_date = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+    
+    current_date.setDate(current_date.getDate()+7);
+    $('#lblSemaine').html('Semaine du ' + current_date.toLocaleDateString('fr-CA', {day:'2-digit', month:'long', year:'numeric'}))
+    .attr('data-date', current_date.toLocaleDateString('en-CA'));
+
+    loadEconomicEventCalendar(current_date);
+  });
+
+  async function loadEconomicEventCalendar(from:Date) {
+    const sunday = GetStartOfWeek(from);
+    const lastDay = new Date(sunday);
+    lastDay.setDate(lastDay.getDate()+6);
+    
+    $('#economicCalendarTableBody').html('');
+    
+    const str_sunday = sunday.toISOString().split('T')[0];
+    const str_lastDay = lastDay.toISOString().split('T')[0]
+
+    const pEvents = EconomicEvent.GetAllEvents(str_sunday, str_lastDay);
+    pEvents.then((events) => {
+
+        var ligne = '';
+
+        const daysOfWeek = [];
+        while (sunday <= lastDay) {
+          daysOfWeek.push(new Date(sunday));
+          sunday.setDate(sunday.getDate()+1);
+        }
+
+        var intLigne = 0;
+        daysOfWeek.forEach((day) => {
+
+          var str_day = day.toISOString().split('T')[0];          
+          const eventsOfDay = events.filter(ev => ev.Date == str_day);
+          const rowSpan = eventsOfDay.length + 2;
+
+          var bgCell = (intLigne % 2 == 0 ? 'bg-dark' : 'forex-alt-row');
+
+          ligne += '<tr class="bg-secondary">';
+          ligne += '<td rowspan="'+rowSpan+'" class="'+bgCell+'">' + day.toLocaleDateString('fr-CA', {day:'2-digit', year:'numeric', month:'long'}) + '</td>';
+          ligne += '</tr>';
+          
+          eventsOfDay.forEach((event) => {
+            ligne += '<tr>' +
+            '<td class="'+bgCell+'"><input type="checkbox" class="form-check-input entry-checkbox" data-id="'+event.Id+'" style="margin-left:10px;"></td>'+
+            '<td class="'+bgCell+'">' + event.Currency + '</td>' +
+            '<td class="'+bgCell+'">' + event.Impact + '</td>' +
+            '<td class="'+bgCell+'">' + event.Name + '</td>' +
+            (event.Actual && event.Actual !== '' ? '<td class="'+bgCell+'">' + event.Actual + '</td>' : '<td class="'+bgCell+'"><button class="btn btn-link">Edit</button></td>') +
+            '<td class="'+bgCell+'">' + event.Forecast + '</td>' +
+            '<td class="'+bgCell+'">' + event.Previous + '</td>' +
+            '</tr>';
+          });
+
+          ligne += GenererLigneAjouterEvenement(day, intLigne);
+
+          intLigne++;
+        });
+
+        $('#economicCalendarTableBody').html(ligne);
+    })
+    .catch((err) => { console.log(err); });    
+  }
+  function GenererLigneAjouterEvenement(date:Date, intLigne:number):string {
+    var bgCell = (intLigne % 2 == 0 ? 'bg-dark' : 'forex-alt-row');
+
+    var ligne = '<tr><td class="'+bgCell+'" style="vertical-align:baseline;"><button class="btn ai-action-btn add-event" type="button" title="Ajouter un évènement" aria-label="Ajouter un évènement">' +
+                    '<i class="bi bi-plus fs-4 text-danger"></i>' +
+                  '</button></td>'+
+                  '<td class="'+bgCell+'" style="vertical-align:baseline;"><select data-currency class="d-none form-select bg-dark text-white">'+
+    '<option value="AUD">AUD</option>'+
+    '<option value="CAD">CAD</option>'+
+    '<option value="CHF">CHF</option>'+
+    '<option value="EUR">EUR</option>'+
+    '<option value="GPB">GPB</option>'+
+    '<option value="JPY">JPY</option>'+
+    '<option value="NZD">NZD</option>'+
+    '<option value="USD">USD</option>'+
+    '</select>'+
+    '</td>';
+    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;"><select data-impact class="d-none form-select bg-dark text-white">'+
+    '<option value="HIGH">High</option>'+
+    '<option value="MEDIUM">Medium</option>'+
+    '<option value="LOW">Low</option>'+
+    '</select>'+
+    '</td>';
+    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;"><input data-name type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Name"></td>';
+    ligne += '<td class="'+bgCell+'"style="vertical-align:baseline;"><input data-actual type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Actual"></td>';
+    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;"><input data-forecast type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Forecast"></td>';
+    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;text-align:end;"><input data-previous type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Previous">' +
+    '<button class="btn ai-action-btn cancel-event d-none" type="button" title="Annuler" aria-label="Annuler">' +
+                    '<i class="bi bi-backspace fs-4"></i>' +
+                  '</button>'+
+    '<button class="btn ai-action-btn save-event d-none" type="button" data-date="' + date.toISOString().split('T')[0] + '" title="Enregistrer un évènement" aria-label="Enregistrer un évènement">' +
+                    '<i class="bi bi-check fs-4 text-danger"></i>' +
+                  '</button>'+
+    '<button class="btn ai-action-btn save-and-next d-none" type="button" data-date="' + date.toISOString().split('T')[0] + '" title="Enregistrer et suivant" aria-label="Enregistrer et suivant">' +
+      '<i class="bi bi-check-circle fs-4 text-danger"></i>' +
+    '</button>'+
+    '</td>';
+    ligne += '</tr>';
+
+    return ligne;
+  }
+  $(document).on('click', '.add-event', function(this:HTMLElement) {
+    const $row = $(this).closest('tr');
+    
+    $row.find('[data-currency]').removeClass('d-none');
+    $row.find('[data-impact]').removeClass('d-none');
+    $row.find('[data-name]').removeClass('d-none');
+    $row.find('[data-actual]').removeClass('d-none');
+    $row.find('[data-forecast]').removeClass('d-none');
+    $row.find('[data-previous]').removeClass('d-none');
+    $row.find('.save-event').removeClass('d-none');
+    $row.find('.cancel-event').removeClass('d-none');
+    $row.find('.save-and-next').removeClass('d-none');
+
+    $(this).addClass('d-none');
+  });
+  $(document).on('click', '.cancel-event', function(this:HTMLElement) {
+    const $row = $(this).closest('tr');
+    
+    $row.find('[data-currency]').addClass('d-none').val('AUD');
+    $row.find('[data-impact]').addClass('d-none').val('HIGH');
+    $row.find('[data-name]').addClass('d-none').val('');
+    $row.find('[data-actual]').addClass('d-none').val('');
+    $row.find('[data-forecast]').addClass('d-none').val('');
+    $row.find('[data-previous]').addClass('d-none').val('');
+    $row.find('.save-event').addClass('d-none').val('');
+    $row.find('.cancel-event').addClass('d-none').val('');
+    $row.find('.save-and-next').addClass('d-none').val('');
+
+    $row.find('.add-event').removeClass('d-none');
+  });
+  $(document).on('click', '.save-event', function(this:HTMLElement) {      
+    InsertEvenement($(this));
+    $('.cancel-event').trigger('click');
+  });
+  $(document).on('click', '.save-and-next', function(this:HTMLElement) {
+    InsertEvenement($(this));
+
+    const $row = $(this).closest('tr');
+    $row.find('[data-name]').val('');
+    $row.find('[data-actual]').val('');
+    $row.find('[data-forecast]').val('');
+    $row.find('[data-previous]').val('');
+  });
+  function InsertEvenement(btn:JQuery<HTMLElement>) {
+    const $row = $(btn).closest('tr');
+      const evenement = new EconomicEvent(0);
+      
+      const name = $row.find('[data-name]').val() as string;
+      if (!name || name.trim() === '') {
+        showToast('Erreur', 'Le nom est un champ obligatoire', 'danger');
+        return;
+      }
+
+      const date = $(btn).data('date') as string;
+      const currency = $row.find('[data-currency]').val() as string;
+      const impact = $row.find('[data-impact]').val() as string;
+      const actual = $row.find('[data-actual]').val() as string;
+      const forecast = $row.find('[data-forecast]').val() as string;
+      const previous = $row.find('[data-previous]').val() as string;
+
+      if (date) evenement.Date = date;
+      if (currency) evenement.Currency = currency;
+      if (impact) evenement.Impact = impact;
+      if (name) evenement.Name = name;
+      if (actual) evenement.Actual = actual;
+      if (forecast) evenement.Forecast = forecast;
+      if (previous) evenement.Previous = previous;
+
+      evenement.Insert().then(() => {
+        showToast('Évènement enregistré', 'Évènement enregistré avec succès', 'success');
+      })
+      .catch(() => {
+        showToast('Erreur', 'Échec lors de l\'enregistrement de l\'évènement', 'danger');
+      });
+  }
+
   $('#btnClearChatHistory').on('click', function() {
     alert('Action front-end : Supprimer l\'historique de conversation');
   });
@@ -668,6 +1012,23 @@ function AddClass(elements: HTMLElement[], className: string): void {
   elements.forEach((element) => {
     $(element).addClass(className);
   });
+}
+
+function GetStartOfWeek(date:Date) {
+    // 1. On crée une copie pour ne pas modifier la date originale par référence
+    const resultDate = new Date(date);
+    
+    // 2. Récupère le jour de la semaine (0 = Dimanche, 1 = Lundi, etc.)
+    const dayOfWeek = resultDate.getDay(); 
+    
+    // 3. Recule du nombre de jours nécessaires pour atteindre le dimanche
+    resultDate.setDate(resultDate.getDate() - dayOfWeek);
+    
+    // 4. Optionnel : On remet l'heure à minuit pile (00:00:00) 
+    // pour avoir un début de journée propre pour tes indexations
+    resultDate.setHours(0, 0, 0, 0);
+    
+    return resultDate;
 }
 
 // Fonction pour afficher un toast dynamique

@@ -264,6 +264,99 @@
       </div>
     </div>
 
+    <!--Modal My Knowledge base and Economic calendar-->
+    <div class="modal fade" id="modalKbCalendar" tabindex="-1" aria-labelledby="modalKbCalendarLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content bg-dark border-secondary text-white">
+          <div class="modal-header border-secondary">
+            <h5 class="modal-title" id="modalKbCalendarLabel">Gestion de la base de connaissances</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+          </div>
+          <div class="modal-body">
+            <ul class="nav nav-tabs mb-3" id="kbCalendarTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tabMyKb-tab" data-bs-toggle="tab" data-bs-target="#tabMyKb" type="button" role="tab" aria-controls="tabMyKb" aria-selected="true">My Knowledge base</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tabEconomicCalendar-tab" data-bs-toggle="tab" data-bs-target="#tabEconomicCalendar" type="button" role="tab" aria-controls="tabEconomicCalendar" aria-selected="false">Economic calendar</button>
+              </li>
+            </ul>
+
+            <div class="tab-content" id="kbCalendarTabContent">
+              <div class="tab-pane fade show active" id="tabMyKb" role="tabpanel" aria-labelledby="tabMyKb-tab">
+                <div id="divOptionsKb" class="mb-3 d-none">
+                  <button id="btnDeselectAll" class="btn ai-action-btn me-2" title="Désélectionner tout">
+                    <i class="bi bi-check-square"></i>
+                  </button>
+                  <button id="regenerateEmbedding" class="btn ai-action-btn me-2" title="Regénerer embedding">
+                    <i class="bi bi-arrow-clockwise"></i>
+                  </button>
+                  <button id="deleteEntries" class="btn ai-action-btn" title="Supprimer entry">
+                    <i class="bi bi-trash text-danger"></i>
+                  </button>
+                </div>
+                <div class="table-responsive">
+                  <table id="tblKb" class="table table-sm table-dark table-striped align-middle mb-0 small">
+                    <thead>
+                      <tr>
+                        <th scope="col"><input type="checkbox" id="selectAllCheckbox" class="form-check-input"></th>
+                        <th scope="col">ID</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Entry</th>
+                        <th scope="col">Comment</th>
+                        <th scope="col">Tags</th>
+                        <th scope="col">Currency</th>
+                        <th scope="col">Analyst</th>
+                        <th scope="col">Source</th>
+                      </tr>
+                    </thead>
+                    <tbody id="kbTableBody">
+                      <tr>
+                        <td colspan="8" class="text-center">Chargement...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="tab-pane fade" id="tabEconomicCalendar" role="tabpanel" aria-labelledby="tabEconomicCalendar-tab">
+                <div class="mb-3 d-flex gap-2">
+                  <button type="button" id="btnSemainePrecedente" class="btn ai-action-btn">
+                    <i class="bi bi-arrow-left-square text-danger"></i>
+                  </button>
+                  <span id="lblSemaine" class="d-flex text-danger" style="align-items: center;">Semaine du</span>
+                  <button type="button" id="btnSemaineSuivante" class="btn ai-action-btn">
+                    <i class="bi bi-arrow-right-square text-danger"></i>
+                  </button>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-sm table-dark small align-middle" id="economicCalendarTable">
+                    <thead>
+                      <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col"><input type="checkbox" id="chkSelectAllEconomicEvent" class="form-check-input" style="margin-left:10px;"></th>
+                        <th scope="col">Currency</th>
+                        <th scope="col">Impact</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Actual</th>
+                        <th scope="col">Forecast</th>
+                        <th scope="col">Previous</th>
+                      </tr>
+                    </thead>
+                    <tbody id="economicCalendarTableBody">
+                      <tr>
+                        <td colspan="8" class="text-center text-secondary">Chargement...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!--Toast-->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
       <div id="settingSavedToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
