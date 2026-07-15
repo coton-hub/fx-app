@@ -328,7 +328,10 @@ $(async function() {
   function rowIsChecked(table:HTMLElement | null):boolean {
     if (!table) return false;
 
-    const checked_rows = table.querySelectorAll('tr:has(.entry-checkbox:checked)');
+    var class_name = '.entry-checkbox';
+    if (table.id === 'economicCalendarTable') class_name = '.entry-checkbox-economic-event';
+    
+    const checked_rows = table.querySelectorAll('tr:has('+class_name+':checked)');
     
     if (checked_rows.length > 0) return true;
     else return false;
@@ -396,7 +399,6 @@ $(async function() {
     await loadEconomicEventCalendar(new Date());
     showKbCalendarModal('economicCalendar');
   });
-
   $('#btnSemainePrecedente').on('click', function() {
     const current_date_str = $('#lblSemaine').attr('data-date');
     if (!current_date_str) return;
@@ -462,7 +464,7 @@ $(async function() {
           
           eventsOfDay.forEach((event) => {
             ligne += '<tr>' +
-            '<td class="'+bgCell+'"><input type="checkbox" class="form-check-input entry-checkbox" data-id="'+event.Id+'" style="margin-left:10px;"></td>'+
+            '<td class="'+bgCell+'"><input type="checkbox" class="form-check-input entry-checkbox-economic-event" data-id="'+event.id+'" style="margin-left:10px;"></td>'+
             '<td class="'+bgCell+'">' + event.Currency + '</td>' +
             '<td class="'+bgCell+'">' + event.Impact + '</td>' +
             '<td class="'+bgCell+'">' + event.Name + '</td>' +
@@ -484,7 +486,7 @@ $(async function() {
   function GenererLigneAjouterEvenement(date:Date, intLigne:number):string {
     var bgCell = (intLigne % 2 == 0 ? 'bg-dark' : 'forex-alt-row');
 
-    var ligne = '<tr><td class="'+bgCell+'" style="vertical-align:baseline;"><button class="btn ai-action-btn add-event" type="button" title="Ajouter un évènement" aria-label="Ajouter un évènement">' +
+    var ligne = '<tr data-compteur="0"><td class="'+bgCell+'" style="vertical-align:baseline;"><button class="btn ai-action-btn add-event" type="button" title="Ajouter un évènement" aria-label="Ajouter un évènement">' +
                     '<i class="bi bi-plus fs-4 text-danger"></i>' +
                   '</button></td>'+
                   '<td class="'+bgCell+'" style="vertical-align:baseline;"><select data-currency class="d-none form-select bg-dark text-white">'+
@@ -505,9 +507,9 @@ $(async function() {
     '</select>'+
     '</td>';
     ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;"><input data-name type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Name"></td>';
-    ligne += '<td class="'+bgCell+'"style="vertical-align:baseline;"><input data-actual type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Actual"></td>';
-    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;"><input data-forecast type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Forecast"></td>';
-    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;text-align:end;"><input data-previous type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Previous">' +
+    ligne += '<td class="'+bgCell+'"style="vertical-align:baseline;width:120px;"><input data-actual type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Actual"></td>';
+    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;width:120px;"><input data-forecast type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Forecast"></td>';
+    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;width:120px;text-align:end;"><input data-previous type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Previous">' +
     '<button class="btn ai-action-btn cancel-event d-none" type="button" title="Annuler" aria-label="Annuler">' +
                     '<i class="bi bi-backspace fs-4"></i>' +
                   '</button>'+
@@ -517,10 +519,47 @@ $(async function() {
     '<button class="btn ai-action-btn save-and-next d-none" type="button" data-date="' + date.toISOString().split('T')[0] + '" title="Enregistrer et suivant" aria-label="Enregistrer et suivant">' +
       '<i class="bi bi-check-circle fs-4 text-danger"></i>' +
     '</button>'+
-    '</td>';
-    ligne += '</tr>';
+    '</td>'+
+    '</tr>';
 
     return ligne;
+  }
+  function InsertEvenement(btn:JQuery<HTMLElement>):Promise<EconomicEvent> {
+    
+    return new Promise<EconomicEvent>((resolve, reject) => {
+      const $row = $(btn).closest('tr');
+      const evenement = new EconomicEvent(0);
+      
+      const name = $row.find('[data-name]').val() as string;
+      if (!name || name.trim() === '') {
+        showToast('Erreur', 'Le nom est un champ obligatoire', 'danger');
+        return;
+      }
+
+      const date = $(btn).data('date') as string;
+      const currency = $row.find('[data-currency]').val() as string;
+      const impact = $row.find('[data-impact]').val() as string;
+      const actual = $row.find('[data-actual]').val() as string;
+      const forecast = $row.find('[data-forecast]').val() as string;
+      const previous = $row.find('[data-previous]').val() as string;
+
+      if (date) evenement.Date = date;
+      if (currency) evenement.Currency = currency;
+      if (impact) evenement.Impact = impact;
+      if (name) evenement.Name = name;
+      if (actual) evenement.Actual = actual;
+      if (forecast) evenement.Forecast = forecast;
+      if (previous) evenement.Previous = previous;
+
+      evenement.Insert().then(() => {
+        showToast('Évènement enregistré', 'Évènement enregistré avec succès', 'success');
+        resolve(evenement);
+      })
+      .catch(() => {
+        showToast('Erreur', 'Échec lors de l\'enregistrement de l\'évènement', 'danger');
+        reject('Échec lors de l\'enregistrement de l\'évènement');
+      });
+    });
   }
   $(document).on('click', '.add-event', function(this:HTMLElement) {
     const $row = $(this).closest('tr');
@@ -553,50 +592,99 @@ $(async function() {
     $row.find('.add-event').removeClass('d-none');
   });
   $(document).on('click', '.save-event', function(this:HTMLElement) {      
-    InsertEvenement($(this));
-    $('.cancel-event').trigger('click');
+    InsertEvenement($(this)).then(() => {
+      loadEconomicEventCalendar(new Date($(this).data('date') as string));
+      $('.cancel-event').trigger('click');
+    });
   });
   $(document).on('click', '.save-and-next', function(this:HTMLElement) {
-    InsertEvenement($(this));
-
-    const $row = $(this).closest('tr');
-    $row.find('[data-name]').val('');
-    $row.find('[data-actual]').val('');
-    $row.find('[data-forecast]').val('');
-    $row.find('[data-previous]').val('');
-  });
-  function InsertEvenement(btn:JQuery<HTMLElement>) {
-    const $row = $(btn).closest('tr');
-      const evenement = new EconomicEvent(0);
+      InsertEvenement($(this)).then((evt) => {
       
-      const name = $row.find('[data-name]').val() as string;
-      if (!name || name.trim() === '') {
-        showToast('Erreur', 'Le nom est un champ obligatoire', 'danger');
-        return;
-      }
+      var bgCell = 'bg-dark';
 
-      const date = $(btn).data('date') as string;
-      const currency = $row.find('[data-currency]').val() as string;
-      const impact = $row.find('[data-impact]').val() as string;
-      const actual = $row.find('[data-actual]').val() as string;
-      const forecast = $row.find('[data-forecast]').val() as string;
-      const previous = $row.find('[data-previous]').val() as string;
+      const $row = $(this).closest('tr');     
+      const td = $(this).closest('td');
+      if (td && td.hasClass('forex-alt-row')) bgCell = 'forex-alt-row';
 
-      if (date) evenement.Date = date;
-      if (currency) evenement.Currency = currency;
-      if (impact) evenement.Impact = impact;
-      if (name) evenement.Name = name;
-      if (actual) evenement.Actual = actual;
-      if (forecast) evenement.Forecast = forecast;
-      if (previous) evenement.Previous = previous;
+      var compteur = parseInt($row.data('compteur'));
 
-      evenement.Insert().then(() => {
-        showToast('Évènement enregistré', 'Évènement enregistré avec succès', 'success');
-      })
-      .catch(() => {
-        showToast('Erreur', 'Échec lors de l\'enregistrement de l\'évènement', 'danger');
+      var ligne = '<tr>';
+      if (compteur > 0) ligne += '<td class="'+bgCell+'"></td>';
+            ligne += '<td class="'+bgCell+'"><input type="checkbox" class="form-check-input entry-checkbox" data-id="'+evt.id+'" style="margin-left:10px;"></td>'+
+            '<td class="'+bgCell+'">' + evt.Currency + '</td>' +
+            '<td class="'+bgCell+'">' + evt.Impact + '</td>' +
+            '<td class="'+bgCell+'">' + evt.Name + '</td>' +
+            (evt.Actual && evt.Actual !== '' ? '<td class="'+bgCell+'">' + evt.Actual + '</td>' : '<td class="'+bgCell+'"><button class="btn btn-link">Edit</button></td>') +
+            '<td class="'+bgCell+'">' + evt.Forecast + '</td>' +
+            '<td class="'+bgCell+'">' + evt.Previous + '</td>' +
+            '</tr>';
+
+      $row.before(ligne);
+       
+      $row.find('[data-name]').val('');
+      $row.find('[data-actual]').val('');
+      $row.find('[data-forecast]').val('');
+      $row.find('[data-previous]').val('');    
+      
+      if (compteur === 0) $row.prepend('<td class="'+bgCell+'"></td>');
+
+      compteur++;
+      $row.data('compteur', compteur);
+    });    
+  });
+  $('#chkSelectAllEconomicEvent').on('change', function() {
+    const isChecked = $(this).is(':checked');
+    $('.entry-checkbox-economic-event').prop('checked', isChecked);
+
+    if (rowIsChecked(document.getElementById('economicCalendarTable'))) $('#divOptionsEconomicCalendar').removeClass('d-none');
+    else $('#divOptionsEconomicCalendar').addClass('d-none');
+  });
+  $(document).on('change', '.entry-checkbox-economic-event', function() {
+    if (rowIsChecked(document.getElementById('economicCalendarTable'))) $('#divOptionsEconomicCalendar').removeClass('d-none');
+    else $('#divOptionsEconomicCalendar').addClass('d-none');
+  });
+  $('#btnDeselectAllEconomicCalendar').on('click', function() {
+    $('#chkSelectAllEconomicEvent').prop('checked', false);
+    $('#chkSelectAllEconomicEvent').trigger('change');
+  });
+  $('#deleteEconomicEvent').on('click', function() {
+    const checkedIds = $('#economicCalendarTable .entry-checkbox-economic-event:checked').map(function() {
+      return $(this).data('id');
+    }).get();
+
+    if (checkedIds.length === 0) {
+      alert('Veuillez sélectionner au moins une entrée');
+      return;
+    }
+
+    if (confirm(`Êtes-vous sûr de vouloir supprimer ${checkedIds.length} évènement(s) ?`)) {
+      
+      const current_date_str = $('#lblSemaine').attr('data-date');
+      const parts = current_date_str!.split('-');
+      
+      const promises:Promise<void>[] = [];
+      checkedIds.forEach((id) => {
+          var p = new Promise<void>((resolve, reject) => {
+            console.log(id);
+              var res = EconomicEvent.DeleteEvent(id);
+              res.then(() => resolve())
+              .catch((err) => reject(err));
+          });
+          promises.push(p);
       });
-  }
+
+      Promise.all(promises).then(() => {
+        loadEconomicEventCalendar(new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2])));
+        showToast('Élément(s) supprimé(s)', 'Élément(s) supprimé(s) avec succès', 'success');
+      })
+      .catch((error) => { 
+        alert('Erreur lors de la suppression, veuillez réessayer');
+        loadEconomicEventCalendar(new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2])));
+        console.log(JSON.stringify(error));
+       });
+    }
+  }); 
+  
 
   $('#btnClearChatHistory').on('click', function() {
     alert('Action front-end : Supprimer l\'historique de conversation');

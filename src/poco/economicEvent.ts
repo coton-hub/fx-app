@@ -3,7 +3,7 @@ import { Database } from './database.ts';
 export class EconomicEvent {
 
     //Attributs
-    Id:number;
+    id:number;
     Date:string;
     Currency:string;
     Impact:string;
@@ -22,7 +22,7 @@ export class EconomicEvent {
 
     //Constructor
     constructor(id:number) {
-        this.Id = id;
+        this.id = id;
         this.Date = '';
         this.Currency = '';
         this.Impact = '';
@@ -54,8 +54,8 @@ export class EconomicEvent {
                 var req = tx.objectStore(Database.DB_STORE_NAME_ECONOMIC_EVENT).add(dataToInsert);
 
                 req.onsuccess = (event) => {
-                    this.Id = (event.target as IDBRequest).result as number;
-                    resolve(this.Id);
+                    this.id = (event.target as IDBRequest).result as number;
+                    resolve(this.id);
                 }
                 req.onerror = (event) => {
                     reject((event.target as IDBRequest).error);
@@ -84,5 +84,19 @@ export class EconomicEvent {
                 }
             });            
         });
+    }
+    public static DeleteEvent(id:number):Promise<void> {
+
+        return new Promise((resolve, reject) => {
+            const pdb = Database.OpenDB();
+
+            pdb.then((db) => {
+                const tx = db.transaction(Database.DB_STORE_NAME_ECONOMIC_EVENT, 'readwrite');
+                const req = tx.objectStore(Database.DB_STORE_NAME_ECONOMIC_EVENT).delete(id);
+
+                req.onsuccess = () => resolve();
+                req.onerror = (event) => reject((event.target as IDBRequest).error)
+            });
+        })
     }
 }

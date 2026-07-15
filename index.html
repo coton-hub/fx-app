@@ -320,15 +320,37 @@
               </div>
 
               <div class="tab-pane fade" id="tabEconomicCalendar" role="tabpanel" aria-labelledby="tabEconomicCalendar-tab">
-                <div class="mb-3 d-flex gap-2">
-                  <button type="button" id="btnSemainePrecedente" class="btn ai-action-btn">
-                    <i class="bi bi-arrow-left-square text-danger"></i>
-                  </button>
-                  <span id="lblSemaine" class="d-flex text-danger" style="align-items: center;">Semaine du</span>
-                  <button type="button" id="btnSemaineSuivante" class="btn ai-action-btn">
-                    <i class="bi bi-arrow-right-square text-danger"></i>
-                  </button>
+
+                <div class="d-flex">
+
+                  <div class="flex-grow-1">
+                    <div id="divOptionsEconomicCalendar" class="d-none" style="margin-left:71%;">
+                      <button id="btnDeselectAllEconomicCalendar" class="btn ai-action-btn me-2" title="Désélectionner tout">
+                        <i class="bi bi-check-square"></i>
+                      </button>
+                      <button id="deleteEconomicEvent" class="btn ai-action-btn" title="Supprimer évènement">
+                        <i class="bi bi-trash text-danger"></i>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div class="mb-3 d-flex gap-2 flex-grow-1" style="justify-content: center;">
+                    <button type="button" id="btnSemainePrecedente" class="btn ai-action-btn">
+                      <i class="bi bi-arrow-left-square text-danger"></i>
+                    </button>
+                    <span id="lblSemaine" class="d-flex text-danger" style="align-items: center;">Semaine du</span>
+                    <button type="button" id="btnSemaineSuivante" class="btn ai-action-btn">
+                      <i class="bi bi-arrow-right-square text-danger"></i>
+                    </button>
+                  </div>
+                  <div class="flex-grow-1" style="text-align: right;">
+                      <button id="btnRefreshEconomicCalendar" class="btn ai-action-btn me-2" title="Rafraîchir">
+                        <i class="bi bi-arrow-clockwise"></i>
+                      </button>
+                  </div>
+
                 </div>
+
                 <div class="table-responsive">
                   <table class="table table-sm table-dark small align-middle" id="economicCalendarTable">
                     <thead>
