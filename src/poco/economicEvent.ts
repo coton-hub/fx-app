@@ -14,11 +14,11 @@ export class EconomicEvent {
 
     //enum
     // Déclaration de l'enum
-    static Impact = Object.freeze({
-        HIGH: 'HIGH',
-        MEDIUM: 'MEDIUM',
-        LOW: 'LOW'
-    });
+    // static Impact = Object.freeze({
+    //     HIGH: 'HIGH',
+    //     MEDIUM: 'MEDIUM',
+    //     LOW: 'LOW'
+    // });
 
     //Constructor
     constructor(id:number) {
@@ -33,7 +33,7 @@ export class EconomicEvent {
     }
 
     //Méthodes Public
-    public async Insert():Promise<number> {
+    public Insert():Promise<number> {
 
         return new Promise<number>((resolve, reject) => {
             
@@ -85,6 +85,23 @@ export class EconomicEvent {
             });            
         });
     }
+    public static GetEvent(id:number):Promise<EconomicEvent> {
+        return new Promise<EconomicEvent>(function(resolve, reject) {
+
+            const pdb = Database.OpenDB();
+            pdb.then((db) => {
+                const tx = db.transaction(Database.DB_STORE_NAME_ECONOMIC_EVENT);
+                const req = tx.objectStore(Database.DB_STORE_NAME_ECONOMIC_EVENT).get(id);
+
+                req.onsuccess = function() {
+                    resolve(req.result);
+                };
+                req.onerror = function() {
+                    reject(req.error);
+                }
+            });
+        });
+    }
     public static DeleteEvent(id:number):Promise<void> {
 
         return new Promise((resolve, reject) => {
@@ -99,4 +116,41 @@ export class EconomicEvent {
             });
         })
     }
+    public static Update(evt:EconomicEvent):Promise<void> {
+
+        return new Promise<void>((resolve, reject) => {
+            
+            const data = {
+                id:evt.id,
+                Date:evt.Date,
+                Currency:evt.Currency,
+                Impact:evt.Impact,
+                Name:evt.Name,
+                Actual:evt.Actual,
+                Forecast:evt.Forecast,
+                Previous:evt.Previous
+            }
+
+            var pdb = Database.OpenDB();
+
+            pdb.then((db) => {
+                var tx = db.transaction(Database.DB_STORE_NAME_ECONOMIC_EVENT, 'readwrite');
+                var req = tx.objectStore(Database.DB_STORE_NAME_ECONOMIC_EVENT).put(data);
+
+                req.onsuccess = () => {
+                    resolve();
+                }
+                req.onerror = () => {
+                    reject(req.error);
+                }
+            })
+        });        
+    }
+}
+
+//Enums
+export enum Impact {
+    HIGH = 'HIGH',
+    MEDIUM = 'MEDIUM',
+    LOW = 'LOW'
 }

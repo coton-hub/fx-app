@@ -10,6 +10,8 @@ import { Database } from './poco/database.ts';
 import { KB } from './poco/kb.ts';
 import { AI } from './poco/ai.ts';
 import { EconomicEvent } from './poco/economicEvent.ts'
+import { CentralBank } from './poco/centralBank.ts';
+import { SettingAI } from './poco/setting.ts';
 
 const COMPTE_SELECT = 4735924;
 //let oramaDb: Orama<any>;
@@ -28,12 +30,19 @@ $(async function() {
   req_db.then((db) => {
     
     const tx = db.transaction(Database.DB_STORE_NAME_SETTING, 'readonly');
+    const tx_ai = db.transaction(Database.DB_STORE_NAME_SETTING_AI, 'readonly');
+
     var req_capital = tx.objectStore(Database.DB_STORE_NAME_SETTING).get(1);
+    var req_ai = tx_ai.objectStore(Database.DB_STORE_NAME_SETTING_AI).get(1);
+
     req_capital.onsuccess = () => {
       $('#iCapital').val(req_capital.result.capital);
-    }
+    };
+    req_ai.onsuccess = () => {
+      $('#chatInstructions').val(req_ai.result.Instructions);
+    };
   });
-
+  
   const today = new Date();
   const sunday = GetStartOfWeek(today);
   $('#lblSemaine').html('Semaine du ' + sunday.toLocaleDateString('fr-CA', {day:'2-digit', month:'long', year:'numeric'}))
@@ -133,7 +142,7 @@ $(async function() {
     });
   });
 
-  // Insert KB Entry
+  // Insert KB Entry -------------------------------------------------
   function saveKbEntry(keepModalOpen: boolean): void {
     const date = $('#kbDate').val()?.toString();
     const entry = $('#kbEntry').val()?.toString();
@@ -253,8 +262,8 @@ $(async function() {
     tags.splice(index, 1);
     updateTagsDisplay();
   });
-
-  // My knowledge base et Economic calendar
+  //-------------------------------------------------------------------
+  // My knowledge base
   async function loadKbEntries(): Promise<void> {
     const tbody = $('#kbTableBody');
     tbody.empty();
@@ -390,6 +399,7 @@ $(async function() {
   $('#btnManageKb').on('click', async function() {
     await loadKbEntries();
     await loadEconomicEventCalendar(new Date());
+    await loadCentralBanks();
     showKbCalendarModal('myKb');
   });
 
@@ -397,6 +407,7 @@ $(async function() {
   $('#btnEconomicCalendar').on('click', async function() {
     await loadKbEntries();
     await loadEconomicEventCalendar(new Date());
+    await loadCentralBanks();
     showKbCalendarModal('economicCalendar');
   });
   $('#btnSemainePrecedente').on('click', function() {
@@ -468,7 +479,7 @@ $(async function() {
             '<td class="'+bgCell+'">' + event.Currency + '</td>' +
             '<td class="'+bgCell+'">' + event.Impact + '</td>' +
             '<td class="'+bgCell+'">' + event.Name + '</td>' +
-            (event.Actual && event.Actual !== '' ? '<td class="'+bgCell+'">' + event.Actual + '</td>' : '<td class="'+bgCell+'"><button class="btn btn-link">Edit</button></td>') +
+            (event.Actual && event.Actual !== '' ? '<td class="'+bgCell+'">' + event.Actual + '</td>' : '<td class="'+bgCell+'"><button class="btn btn-link edit-economic-event" data-id="'+event.id+'">Update</button></td>') +
             '<td class="'+bgCell+'">' + event.Forecast + '</td>' +
             '<td class="'+bgCell+'">' + event.Previous + '</td>' +
             '</tr>';
@@ -489,7 +500,7 @@ $(async function() {
     var ligne = '<tr data-compteur="0"><td class="'+bgCell+'" style="vertical-align:baseline;"><button class="btn ai-action-btn add-event" type="button" title="Ajouter un évènement" aria-label="Ajouter un évènement">' +
                     '<i class="bi bi-plus fs-4 text-danger"></i>' +
                   '</button></td>'+
-                  '<td class="'+bgCell+'" style="vertical-align:baseline;"><select data-currency class="d-none form-select bg-dark text-white">'+
+                  '<td class="'+bgCell+'" style="vertical-align:baseline;"><select data-currency class="d-none form-select form-select-sm bg-dark text-white">'+
     '<option value="AUD">AUD</option>'+
     '<option value="CAD">CAD</option>'+
     '<option value="CHF">CHF</option>'+
@@ -500,16 +511,16 @@ $(async function() {
     '<option value="USD">USD</option>'+
     '</select>'+
     '</td>';
-    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;"><select data-impact class="d-none form-select bg-dark text-white">'+
+    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;"><select data-impact class="d-none form-select form-select-sm bg-dark text-white">'+
     '<option value="HIGH">High</option>'+
     '<option value="MEDIUM">Medium</option>'+
     '<option value="LOW">Low</option>'+
     '</select>'+
     '</td>';
-    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;"><input data-name type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Name"></td>';
-    ligne += '<td class="'+bgCell+'"style="vertical-align:baseline;width:120px;"><input data-actual type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Actual"></td>';
-    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;width:120px;"><input data-forecast type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Forecast"></td>';
-    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;width:120px;text-align:end;"><input data-previous type="text" class="d-none form-control bg-dark border-secondary text-white input-placeholder" placeholder="Previous">' +
+    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;"><input data-name type="text" class="d-none form-control form-control-sm bg-dark border-secondary text-white input-placeholder" placeholder="Name"></td>';
+    ligne += '<td class="'+bgCell+'"style="vertical-align:baseline;width:120px;"><input data-actual type="text" class="d-none form-control form-control-sm bg-dark border-secondary text-white input-placeholder" placeholder="Actual"></td>';
+    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;width:120px;"><input data-forecast type="text" class="d-none form-control form-control-sm bg-dark border-secondary text-white input-placeholder" placeholder="Forecast"></td>';
+    ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;width:120px;text-align:end;"><input data-previous type="text" class="d-none form-control form-control-sm bg-dark border-secondary text-white input-placeholder" placeholder="Previous">' +
     '<button class="btn ai-action-btn cancel-event d-none" type="button" title="Annuler" aria-label="Annuler">' +
                     '<i class="bi bi-backspace fs-4"></i>' +
                   '</button>'+
@@ -683,9 +694,76 @@ $(async function() {
         console.log(JSON.stringify(error));
        });
     }
-  }); 
-  
+  });
+  $(document).on('click', '.edit-economic-event', function() {
+    const eventId = parseInt($(this).data('id'));
+    const td = $(this).closest('td');
 
+    const content = '<div class="d-flex flex-gap-2"><input type="text" class="form-control form-control-sm bg-dark border-secondary text-white input-placeholder" placeholder="Actual">'+
+    '<button class="btn ai-action-btn update-actual-event" data-id="'+eventId+'" type="button" title="Accepter" aria-label="Accepter">' +
+                    '<i class="bi bi-check fs-4 text-danger"></i>' +
+                  '</button></div>';
+
+    td.html(content);
+  });
+  $(document).on('click', '.update-actual-event', function() {
+    const td = $(this).closest('td');
+    const eventId = parseInt($(this).data('id'));
+    
+    EconomicEvent.GetEvent(eventId).then((evt) => {
+      evt.Actual = $(td).find('input').val() ?? '';
+      
+      EconomicEvent.Update(evt).then(() => {
+        showToast('Évènement à jour', 'Évènement enregistré avec succès', 'success');
+        const content = (evt.Actual && evt.Actual !== '' ? evt.Actual : '<button class="btn btn-link edit-economic-event" data-id="'+evt.id+'">Update</button>');
+        $(td).html(content);
+      })
+      .catch(() => {
+        showToast('Erreur', 'Échec lors de l\'enregistrement de l\'évènement', 'danger');
+      });
+    });
+  });
+
+  //Central Banks
+  async function loadCentralBanks() {
+
+    const rates = await CentralBank.GetAll();
+    rates.sort((a, b) => b.Rate.localeCompare(a.Rate));
+
+    $('#tbodyCentralBanks').html('');
+
+    var ligne = '';
+    rates.forEach((rate) => {
+
+      const jRate = JSON.stringify(rate).replace(/"/g, '\'');
+      ligne += `<tr><td style="width:100px;">${rate.Currency}</td><td style="width:100px;">${rate.Rate}</td>`+
+      '<td><div class="d-flex gap-3"><input type="text" class="form-control form-control-sm bg-dark border-secondary text-white input-placeholder" placeholder="Nouveau taux">'+
+      '<button class="btn ai-action-btn update-central-bank-rate" data-content='+jRate+' type="button" title="Modifier" aria-label="Modifier">' +
+                    '<i class="bi bi-check fs-4 text-danger"></i>' +
+                  '</button></div>'+
+      '</td>'+
+      '</tr>';
+    });
+
+    $('#tbodyCentralBanks').html(ligne);
+  }
+  $(document).on('click', '.update-central-bank-rate', function() {
+      const $td = $(this).closest('td');
+      const rawContent = $(this).data('content') as string;
+      const rate = JSON.parse(rawContent.replace(/\'/g, '"')) as CentralBank;
+
+      rate.Rate = $td.find('input').val() ?? '';
+
+      CentralBank.Update(rate).then(() => {
+        showToast('Taux à jour', 'Taux enregistré avec succès', 'success');
+        loadCentralBanks();
+      })
+      .catch(() => {
+        showToast('Erreur', 'Échec lors de l\'enregistrement du taux', 'danger');
+      })
+  });
+  //-------------------------------------------------------------------------------------
+  //AI Prompt
   $('#btnClearChatHistory').on('click', function() {
     alert('Action front-end : Supprimer l\'historique de conversation');
   });
@@ -699,8 +777,28 @@ $(async function() {
 
     chatInput.addEventListener('input', resizeTextarea);
     resizeTextarea();
-  }
+  } 
 
+  //Instructions
+  async function InsertInstructions(instructions:string) {
+    const param = new SettingAI(1);
+    param.Instructions = instructions;
+    await SettingAI.Update(param);
+  }
+  const DebounceInstructions = debounce((valeur: string) => {
+    InsertInstructions(valeur).then(() => {
+        showToast('Instructions enregistrées', 'Instructions enregistrées avec succès', 'success');
+      })
+      .catch(() => {
+        showToast('Erreur', 'Échec lors de l\'enregistrement des instructions', 'danger');
+      });
+  }, 3000);
+  $('#chatInstructions').on('input', function(this: HTMLElement) {
+    const texte = $(this).val() as string;
+    DebounceInstructions(texte);
+  });
+  
+  //Trades section----------------------------------------------------------------
   $("#DragDiv").on("dragenter dragover", function(e){ e.preventDefault(); e.stopPropagation(); $(this).addClass("active"); });
   $("#DragDiv").on("dragleave drop", function(e){ e.preventDefault(); e.stopPropagation(); $(this).removeClass("active"); });
   $("#DragDiv").on("drop", function(e)  
@@ -839,6 +937,34 @@ $(async function() {
           
         });
   });
+  //-------------------------------------------------------------------------------
+
+  //Database management
+  $('#btnExportDB').on('click', function() {
+    Database.ExportDB().then((data) => {
+
+      // 3. Convertir en JSON et déclencher le téléchargement du fichier
+      const jsonString = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'forex-app-backup.json';
+      document.body.appendChild(a);
+      a.click();
+
+      // Nettoyage de la mémoire
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast('Database export', 'Database export exécuté avec succès', 'success');
+    })
+    .catch(() => {
+      showToast('Erreur', 'Échec lors de l\'export de la database', 'danger');
+    });
+  });
+  //------------------------------------------------------------------------------
   // #endregion
 })
 
@@ -1118,6 +1244,19 @@ function GetStartOfWeek(date:Date) {
     
     return resultDate;
 }
+function debounce<T extends (...args: any[]) => void>(callback: T, delay: number): (...args: Parameters<T>) => void {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    return function(this: any, ...args: Parameters<T>): void {
+      if (timer) {
+        clearTimeout(timer);
+      }
+
+      timer = setTimeout(() => {
+        callback.apply(this, args);
+      }, delay);
+    };
+  }
 
 // Fonction pour afficher un toast dynamique
 function showToast(titre: string, message: string, type: 'success' | 'danger' = 'success'): void {

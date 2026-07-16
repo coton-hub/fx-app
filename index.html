@@ -167,47 +167,52 @@
       <!--Setting Container-->
       <div class="p-1 py-2 text-white d-none" id="divSettings">
         
-        <div style="display:flex;align-items:center;column-gap:10px;">
-          <button id="btnSaveSettings" type="button" class="btn btn-outline-danger">Save</button>
-          <span class="bg-dark text-secondary flex-grow-1" style="text-align:right;">KB</span>
-          <button type="button" class="btn btn-outline-secondary text-secondary">Load</button>
-          <button type="button" class="btn btn-outline-secondary text-secondary">Export</button>
-        </div>
-
-        <div class="input-group mt-4">
+        <div class="input-group input-group-sm mt-4">
           <span class="input-group-text bg-dark">Capital de trading</span>
           <input type="number" class="form-control" id="iCapital" style="text-align:right;" >
-          <span class="input-group-text bg-dark">$</span>
+          <span class="input-group-text bg-dark">$</span>          
         </div>
 
-        <div class="mt-4 p-3 rounded-3 border border-secondary bg-dark">
+        <div class="mt-1" style="text-align:end;">
+          <button id="btnSaveSettings" type="button" class="btn btn-sm btn-outline-danger">Save</button>
+        </div>
+
+        <div class="mt-4 p-3 rounded-3 border border-secondary bg-dark small">
           <div class="mb-3">
-            <h5 class="mb-3">Backup Cloud</h5>
-            <label for="iBackupHost" class="form-label">Hôte</label>
-            <input type="text" class="form-control" id="iBackupHost" placeholder="Ex: backup.example.com">
+            <h6 class="mb-3">Knowledge base</h6>
+            <button type="button" class="btn btn-sm btn-outline-secondary text-secondary">Load</button>
+            <button type="button" id="btnExportDB" class="btn btn-sm btn-outline-secondary text-secondary">Export</button>
           </div>
-          <button id="btnTestBackupConnection" type="button" class="btn btn-outline-danger">Tester connexion</button>
         </div>
 
-        <div class="mt-4 p-3 rounded-3 border border-secondary bg-dark">
+        <div class="mt-4 p-3 rounded-3 border border-secondary bg-dark small">
           <div class="mb-3">
-            <h5 class="mb-3">Serveur local</h5>
+            <h6 class="mb-3">Backup Cloud</h6>
+            <label for="iBackupHost" class="form-label">Hôte</label>
+            <input type="text" class="form-control form-control-sm" id="iBackupHost" placeholder="Ex: backup.example.com">
+          </div>
+          <button id="btnTestBackupConnection" type="button" class="btn btn-sm btn-outline-danger">Tester connexion</button>
+        </div>
+
+        <div class="mt-4 p-3 rounded-3 border border-secondary bg-dark small">
+          <div class="mb-3">
+            <h6 class="mb-3">Serveur local</h6>
             <label for="iLocalHost" class="form-label">Hôte</label>
-            <input type="text" class="form-control" id="iLocalHost" placeholder="Ex: localhost">
+            <input type="text" class="form-control form-control-sm" id="iLocalHost" placeholder="Ex: localhost">
           </div>
           <div class="mb-3">
             <label for="iLocalPort" class="form-label">Port</label>
-            <input type="number" class="form-control" id="iLocalPort" placeholder="Ex: 8080">
+            <input type="number" class="form-control form-control-sm" id="iLocalPort" placeholder="Ex: 8080">
           </div>
           <div class="mb-3">
             <label for="iLocalUsername" class="form-label">Nom d'utilisateur</label>
-            <input type="text" class="form-control" id="iLocalUsername" placeholder="Ex: admin">
+            <input type="text" class="form-control form-control-sm" id="iLocalUsername" placeholder="Ex: admin">
           </div>
           <div class="mb-3">
             <label for="iLocalPassword" class="form-label">Mot de passe</label>
-            <input type="password" class="form-control" id="iLocalPassword" placeholder="Mot de passe">
+            <input type="password" class="form-control form-control-sm" id="iLocalPassword" placeholder="Mot de passe">
           </div>
-          <button id="btnTestLocalConnection" type="button" class="btn btn-outline-danger">Tester connexion</button>
+          <button id="btnTestLocalConnection" type="button" class="btn btn-sm btn-outline-danger">Tester connexion</button>
         </div>
 
       </div>      
@@ -280,9 +285,13 @@
               <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tabEconomicCalendar-tab" data-bs-toggle="tab" data-bs-target="#tabEconomicCalendar" type="button" role="tab" aria-controls="tabEconomicCalendar" aria-selected="false">Economic calendar</button>
               </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tabCentralBankRates-tab" data-bs-toggle="tab" data-bs-target="#tabCentralBankRates" type="button" role="tab" aria-controls="tabCentralBankRates" aria-selected="false">Taux - Banque centrale</button>
+              </li>
             </ul>
 
             <div class="tab-content" id="kbCalendarTabContent">
+
               <div class="tab-pane fade show active" id="tabMyKb" role="tabpanel" aria-labelledby="tabMyKb-tab">
                 <div id="divOptionsKb" class="mb-3 d-none">
                   <button id="btnDeselectAll" class="btn ai-action-btn me-2" title="Désélectionner tout">
@@ -373,6 +382,23 @@
                   </table>
                 </div>
               </div>
+
+              <div class="tab-pane fade" id="tabCentralBankRates" role="tabpanel" aria-labelledby="tabCentralBankRates-tab">
+                <div class="table-responsive">
+                  <table class="table table-sm table-dark small align-middle" style="max-width:450px;">
+                    <thead>
+                      <tr>
+                        <th scope="col">Devise</th>
+                        <th scope="col">Taux</th>
+                        <th scope="col"></th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbodyCentralBanks">
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
