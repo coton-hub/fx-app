@@ -3,7 +3,7 @@ export class Database {
 
   // DB Constants
   static DB_NAME = "Mac-Fx";
-  static DB_VERSION = 9;
+  static DB_VERSION = 10;
   static DB_STORE_NAME_SETTING = 'setting';
   static DB_STORE_NAME_KB = 'kb';
   static DB_STORE_NAME_ECONOMIC_EVENT = 'economic_event';
@@ -28,7 +28,8 @@ export class Database {
           () => function() {},
           () => this.MigrateV5(req),
           () => this.MigrateV6(db,req),
-          () => this.MigrateV7(db)
+          () => this.MigrateV7(db),
+          () => this.MigrateV8(req)
         ];
 
         for (let i = old_version; i < migrations.length; i++) {
@@ -114,6 +115,10 @@ export class Database {
       autoIncrement:true
     });
     console.log('Migrated V7');
+  }
+  private static MigrateV8(req:IDBOpenDBRequest):void {
+    req.transaction!.objectStore(this.DB_STORE_NAME_KB).createIndex('date', 'Date');
+    console.log('Migrated V8');
   }
   
 

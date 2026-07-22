@@ -58,3 +58,22 @@ export class SettingAI {
         });
     }
 }
+
+export enum Currencies {
+    AUD = 0,
+    CAD,
+    CHF,
+    EUR,
+    GPB,
+    JPY,
+    NZD,
+    USD
+}
+export enum Pair {
+    AUDUSD = 0,
+    NZDUSD,
+    AUDNZD,
+    EURUSD,
+    EURAUD,
+    USDCAD
+}

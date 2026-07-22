@@ -11,7 +11,7 @@ import { KB } from './poco/kb.ts';
 import { AI } from './poco/ai.ts';
 import { EconomicEvent } from './poco/economicEvent.ts'
 import { CentralBank } from './poco/centralBank.ts';
-import { SettingAI } from './poco/setting.ts';
+import { SettingAI, Currencies, Pair } from './poco/setting.ts';
 
 const COMPTE_SELECT = 4735924;
 //let oramaDb: Orama<any>;
@@ -48,7 +48,7 @@ $(async function() {
   $('#lblSemaine').html('Semaine du ' + sunday.toLocaleDateString('fr-CA', {day:'2-digit', month:'long', year:'numeric'}))
   .attr('data-date', sunday.toLocaleDateString('en-CA'));
 
-  //Orama
+  //Orama - POUR L'INSTANT, je ne roule pas de rechercher sémantique
   // oramaDb = await create({
   //     schema: {
   //         entry: 'string', //texte brute
@@ -153,7 +153,7 @@ $(async function() {
     }
     
     const kb = new KB(0);
-    kb.Date = new Date(date);
+    kb.Date = new Date(date).toISOString().split('T')[0];
     kb.Entry = entry;
     kb.Comment = $('#kbCommentaire').val()?.toString() || '';
     kb.Tags = tags.join(', ');
@@ -279,12 +279,11 @@ $(async function() {
       entries.sort((a, b) => b.Id - a.Id);
 
       entries.forEach((entry) => {
-        const dateValue = entry.Date.toISOString().split('T')[0];
         tbody.append(`
           <tr>
             <td><input type="checkbox" class="form-check-input entry-checkbox" data-id="${entry.Id}"></td>
             <td>${entry.Id}</td>
-            <td>${dateValue}</td>
+            <td>${entry.Date}</td>
             <td style="max-width: 800px;"><div class="text-break">${entry.Entry || ''}</div></td>
             <td><div class="text-break">${entry.Comment || ''}</div></td>
             <td>${entry.Tags || ''}</td>
@@ -521,13 +520,13 @@ $(async function() {
     ligne += '<td class="'+bgCell+'"style="vertical-align:baseline;width:120px;"><input data-actual type="text" class="d-none form-control form-control-sm bg-dark border-secondary text-white input-placeholder" placeholder="Actual"></td>';
     ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;width:120px;"><input data-forecast type="text" class="d-none form-control form-control-sm bg-dark border-secondary text-white input-placeholder" placeholder="Forecast"></td>';
     ligne += '<td class="'+bgCell+'" style="vertical-align:baseline;width:120px;text-align:end;"><input data-previous type="text" class="d-none form-control form-control-sm bg-dark border-secondary text-white input-placeholder" placeholder="Previous">' +
-    '<button class="btn ai-action-btn cancel-event d-none" type="button" title="Annuler" aria-label="Annuler">' +
+    '<button class="btn btn-sm ai-action-btn cancel-event d-none" type="button" title="Annuler" aria-label="Annuler">' +
                     '<i class="bi bi-backspace fs-4"></i>' +
                   '</button>'+
-    '<button class="btn ai-action-btn save-event d-none" type="button" data-date="' + date.toISOString().split('T')[0] + '" title="Enregistrer un évènement" aria-label="Enregistrer un évènement">' +
+    '<button class="btn btn-sm ai-action-btn save-event d-none" type="button" data-date="' + date.toISOString().split('T')[0] + '" title="Enregistrer un évènement" aria-label="Enregistrer un évènement">' +
                     '<i class="bi bi-check fs-4 text-danger"></i>' +
                   '</button>'+
-    '<button class="btn ai-action-btn save-and-next d-none" type="button" data-date="' + date.toISOString().split('T')[0] + '" title="Enregistrer et suivant" aria-label="Enregistrer et suivant">' +
+    '<button class="btn btn-sm ai-action-btn save-and-next d-none" type="button" data-date="' + date.toISOString().split('T')[0] + '" title="Enregistrer et suivant" aria-label="Enregistrer et suivant">' +
       '<i class="bi bi-check-circle fs-4 text-danger"></i>' +
     '</button>'+
     '</td>'+
@@ -764,6 +763,72 @@ $(async function() {
   });
   //-------------------------------------------------------------------------------------
   //AI Prompt
+  async function BuildAndSendPrompt() {
+
+    const prompt = $('#chatInput').val() as string;
+    const params = await SettingAI.Get();
+    const rates = await CentralBank.GetAll();
+
+    //Identifier les devises et les paires dans le prompt
+    var devises:string[] = [];
+    var paires:string[] = [];
+    Object.keys(Currencies).forEach((key) => {
+      if (prompt.toUpperCase().includes(key)) devises.push(key);
+    });
+    Object.keys(Pair).forEach((key) => {
+      if (prompt.replace('/', '').toUpperCase().includes(key)) paires.push(key);
+    });
+
+    //Get Economic Events
+    const sunday = GetStartOfWeek(new Date());
+    const from = new Date(sunday);
+    from.setDate(from.getDate()-7);
+    const to = new Date(sunday);
+    to.setDate(to.getDate()+6);
+
+    const economicEvents = await EconomicEvent.GetAllEvents(from.toISOString().split('T')[0], to.toISOString().split('T')[0]);
+    const economicEventsToSend = economicEvents.sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime())
+    .filter(ev => devises.includes(ev.Currency.toUpperCase()))
+    .map<any>((ev) => {
+      return {
+        Date:ev.Date,
+        Currency:ev.Currency,
+        Impact:ev.Impact,
+        Name:ev.Name,
+        Actual:ev.Actual,
+        Forecast:ev.Forecast,
+        Previous:ev.Previous
+      }
+    });
+
+    //Get données récentes de la KB
+    const last7Days = new Date();
+    last7Days.setDate(last7Days.getDate()-7);
+
+    const kbs = await KB.GetAllKBEntriesFrom(last7Days.toISOString().split('T')[0]);
+    const kbsToSend = kbs.sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime())
+    .filter((kb) => devises.includes(kb.Currency.toUpperCase()) || paires.includes(kb.Currency.toUpperCase()))
+    .map<any>((kb) => {
+      return {
+        Date:kb.Date,
+        Entry:kb.Entry,
+        Comment:kb.Comment,
+        Tags:kb.Tags,
+        Currency:kb.Currency,
+        Analyst:kb.Analyst,
+        WebSiteUrl:kb.WebSiteUrl
+      }
+    });
+    
+    const res = await AI.PromptModel(prompt, { historiqueConvo:'', instructions:params.Instructions, dateDuJours:new Date().toISOString().split('T')[0],
+      tableauBanquesCentrales:JSON.stringify(rates), calendrierEconomique:JSON.stringify(economicEventsToSend), donneesRecentes:JSON.stringify(kbsToSend) });
+
+    console.log(res.content);
+    console.log(res.thinking);
+  }
+  $('#sendChatBtn').on('click', async function() {
+      BuildAndSendPrompt();
+  });
   $('#btnClearChatHistory').on('click', function() {
     alert('Action front-end : Supprimer l\'historique de conversation');
   });
